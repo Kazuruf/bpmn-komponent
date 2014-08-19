@@ -1,7 +1,7 @@
 
-koolkode:
-  database:
-    connectionmanager:
+KoolKode:
+  Database:
+    ConnectionManager:
       adapter:
         default:
           dsn: 'sqlite::memory:'

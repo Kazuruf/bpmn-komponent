@@ -16,11 +16,10 @@ use KoolKode\BPMN\Repository\RepositoryService;
 use KoolKode\BPMN\Runtime\RuntimeService;
 use KoolKode\BPMN\Task\TaskInterface;
 use KoolKode\BPMN\Task\TaskService;
-use KoolKode\Config\Configuration;
 use KoolKode\Database\ConnectionManagerInterface;
 use KoolKode\K2\Komponent\KomponentLoader;
 use KoolKode\K2\Test\TestCase;
-use KoolKode\Config\YamlConfigurationLoader;
+use KoolKode\K2\Test\TestConfigLoader;
 
 class ProcessEngineFactoryTest extends TestCase
 {
@@ -39,12 +38,9 @@ class ProcessEngineFactoryTest extends TestCase
 		$komponents->registerKomponent(new \KoolKode\BPMN\Komponent\Komponent());
 	}
 	
-	public function loadConfiguration()
+	public function loadConfigurationSources(TestConfigLoader $loader)
 	{
-		$loader = new YamlConfigurationLoader();
-		$data = $loader->load(new \SplFileInfo(__DIR__ . DIRECTORY_SEPARATOR . 'ProcessEngineFactoryTest.yml'));
-		
-		return new Configuration($data);
+		$loader->addFile(__DIR__ . '/ProcessEngineFactoryTest.yml');
 	}
 	
 	public function injectConnectionManager(ConnectionManagerInterface $connectionManager)
