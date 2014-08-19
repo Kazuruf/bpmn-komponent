@@ -2,12 +2,12 @@
 
 /*
  * This file is part of KoolKode BPMN Komponent.
-*
-* (c) Martin Schröder <m.schroeder2007@gmail.com>
-*
-* For the full copyright and license information, please view the LICENSE
-* file that was distributed with this source code.
-*/
+ *
+ * (c) Martin Schröder <m.schroeder2007@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 $autoload = __DIR__ . '/../vendor/autoload.php';
 
