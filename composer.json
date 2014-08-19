@@ -1,0 +1,32 @@
+{
+	"name" : "koolkode/bpmn-komponent",
+	"description" : "Process Engine Komponent",
+	"keywords" : [
+		"koolkode",
+		"bpmn",
+		"process"
+	],
+	"type" : "koolkode-komponent",
+	"license" : "MIT",
+	"homepage" : "https://github.com/koolkode/bpmn-komponent",
+	"authors" : [{
+			"name" : "Martin Schröder",
+			"email" : "m.schroeder2007@gmail.com"
+		}
+	],
+	"require" : {
+		"php" : ">=5.5.0",
+		"koolkode/bpmn" : "dev-master",
+		"koolkode/k2" : "dev-master",
+		"koolkode/http-komponent" : "dev-master"
+	},
+	"require-dev" : {
+		"phpunit/phpunit" : "4.*"
+	},
+	"autoload" : {
+		"psr-4" : {
+			"KoolKode\\BPMN\\Komponent\\" : "src"
+		}
+	},
+	"minimum-stability" : "dev"
+}
