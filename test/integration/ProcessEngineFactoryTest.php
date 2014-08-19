@@ -20,6 +20,7 @@ use KoolKode\Config\Configuration;
 use KoolKode\Database\ConnectionManagerInterface;
 use KoolKode\K2\Komponent\KomponentLoader;
 use KoolKode\K2\Test\TestCase;
+use KoolKode\Config\YamlConfigurationLoader;
 
 class ProcessEngineFactoryTest extends TestCase
 {
@@ -40,25 +41,10 @@ class ProcessEngineFactoryTest extends TestCase
 	
 	public function loadConfiguration()
 	{
-		return new Configuration([
-			'koolkode' => [
-				'database' => [
-					'connectionmanager' => [
-						'adapter' => [
-							'default' => [
-								'dsn' => 'sqlite::memory:'
-							]
-						],
-						'connection' => [
-							'default' => [
-								'adapter' => 'default',
-								'prefix' => 'bpmn_'
-							]
-						]
-					]
-				]
-			]
-		]);
+		$loader = new YamlConfigurationLoader();
+		$data = $loader->load(new \SplFileInfo(__DIR__ . DIRECTORY_SEPARATOR . 'ProcessEngineFactoryTest.yml'));
+		
+		return new Configuration($data);
 	}
 	
 	public function injectConnectionManager(ConnectionManagerInterface $connectionManager)

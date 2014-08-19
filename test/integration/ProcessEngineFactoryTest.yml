@@ -1,0 +1,11 @@
+
+koolkode:
+  database:
+    connectionmanager:
+      adapter:
+        default:
+          dsn: 'sqlite::memory:'
+      connection:
+        default:
+          adapter: default
+          prefix: bpmn_
