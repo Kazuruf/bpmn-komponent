@@ -11,26 +11,38 @@
 
 namespace KoolKode\BPMN\Komponent;
 
-use KoolKode\BPMN\Engine\ProcessEngineInterface;
+use KoolKode\Context\Bind\Inject;
+use KoolKode\BPMN\Komponent\Test\ProcessRule;
 use KoolKode\BPMN\Repository\RepositoryService;
 use KoolKode\BPMN\Runtime\RuntimeService;
 use KoolKode\BPMN\Task\TaskInterface;
 use KoolKode\BPMN\Task\TaskService;
-use KoolKode\Database\ConnectionManagerInterface;
 use KoolKode\K2\Komponent\KomponentLoader;
 use KoolKode\K2\Test\TestCase;
-use KoolKode\K2\Test\TestConfigLoader;
 
 class ProcessEngineFactoryTest extends TestCase
 {
-	protected $connectionManager;
+	/**
+	 * @var ProcessRule
+	 */
+	protected $processRule;
 	
-	protected $engine;
-	
+	/**
+	 * @Inject
+	 * @var RepositoryService
+	 */
 	protected $repositoryService;
 	
+	/**
+	 * @Inject
+	 * @var RuntimeService
+	 */
 	protected $runtimeService;
 	
+	/**
+	 * @Inject
+	 * @var TaskService
+	 */
 	protected $taskService;
 	
 	public function registerKomponents(KomponentLoader $komponents)
@@ -38,54 +50,14 @@ class ProcessEngineFactoryTest extends TestCase
 		$komponents->registerKomponent(new \KoolKode\BPMN\Komponent\Komponent());
 	}
 	
-	public function loadConfigurationSources(TestConfigLoader $loader)
+	public function createRules()
 	{
-		$loader->addFile(__DIR__ . '/ProcessEngineFactoryTest.yml');
-	}
-	
-	public function injectConnectionManager(ConnectionManagerInterface $connectionManager)
-	{
-		$this->connectionManager = $connectionManager;
-	}
-	
-	public function injectProcessEngine(ProcessEngineInterface $engine)
-	{
-		$this->engine = $engine;
-	}
-	
-	public function injectRepositoryService(RepositoryService $repositoryService)
-	{
-		$this->repositoryService = $repositoryService;
-	}
-	
-	public function injectRuntimeService(RuntimeService $runtimeService)
-	{
-		$this->runtimeService = $runtimeService;
-	}
-	
-	public function injectTaskService(TaskService $taskService)
-	{
-		$this->taskService = $taskService;
-	}
-	
-	protected function setUp()
-	{
-		parent::setUp();
-		
-		$ref = new \ReflectionClass(ProcessEngineInterface::class);
-		$file = dirname($ref->getFileName()) . DIRECTORY_SEPARATOR . 'ProcessEngine.sqlite.sql';
-		$chunks = explode(';', file_get_contents($file));
-		$conn = $this->connectionManager->getConnection('default');
-		
-		foreach($chunks as $chunk)
-		{
-			$conn->execute($chunk);
-		}
+		$this->processRule = new ProcessRule($this->container);
 	}
 	
 	public function testSimpleIntegration()
 	{
-		$this->deployFile('ProcessEngineFactoryTest.bpmn');
+		$this->processRule->deployFile('ProcessEngineFactoryTest.bpmn');
 		
 		$this->assertEquals(0, $this->runtimeService->createExecutionQuery()->count());
 		
@@ -120,15 +92,5 @@ class ProcessEngineFactoryTest extends TestCase
 		
 		$this->taskService->complete($task->getId());
 		$this->assertEquals(0, $this->runtimeService->createExecutionQuery()->count());
-	}
-	
-	protected function deployFile($file)
-	{
-		if(!preg_match("'^(?:(?:[a-z]:)|(/+)|([^:]+://))'i", $file))
-		{
-			$file = dirname((new \ReflectionClass(get_class($this)))->getFileName()) . DIRECTORY_SEPARATOR . $file;
-		}
-	
-		return $this->repositoryService->deployDiagram($file);
 	}
 }
