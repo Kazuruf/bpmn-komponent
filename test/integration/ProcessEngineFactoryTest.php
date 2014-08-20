@@ -55,7 +55,18 @@ class ProcessEngineFactoryTest extends TestCase
 		$this->processRule = new ProcessRule($this->container);
 	}
 	
-	public function testSimpleIntegration()
+	public function provideOrders()
+	{
+		return [
+			[27364, 'Hello world', true],
+			[1337, 'N/A', false]
+		];
+	}
+	
+	/**
+	 * @dataProvider provideOrders
+	 */
+	public function testMultipleInvocationsUsingDataProvider($id, $title, $confirmed)
 	{
 		$this->processRule->deployFile('ProcessEngineFactoryTest.bpmn');
 		
@@ -71,8 +82,8 @@ class ProcessEngineFactoryTest extends TestCase
 		$this->assertEquals(1, $this->taskService->createTaskQuery()->count());
 		
 		$this->taskService->complete($task->getId(), [
-			'id' => 2355,
-			'title' => 'New product order'
+			'id' => $id,
+			'title' => $title
 		]);
 		$this->assertEquals(1, $this->runtimeService->createExecutionQuery()->count());
 		$this->assertEquals(0, $this->taskService->createTaskQuery()->count());
@@ -81,7 +92,7 @@ class ProcessEngineFactoryTest extends TestCase
 		$this->assertEquals($process->getId(), $execution->getId());
 		
 		$this->runtimeService->createMessageCorrelation('OrderRegistrationReceived')
-							 ->setVariable('confirmed', time())
+							 ->setVariable('confirmed', $confirmed)
 							 ->correlate();
 		
 		$task = $this->taskService->createTaskQuery()->findOne();
@@ -89,6 +100,12 @@ class ProcessEngineFactoryTest extends TestCase
 		$this->assertEquals('verifyRegistration', $task->getActivityId());
 		$this->assertEquals(1, $this->runtimeService->createExecutionQuery()->count());
 		$this->assertEquals(1, $this->taskService->createTaskQuery()->count());
+		
+		$this->assertEquals([
+			'id' => $id,
+			'title' => $title,
+			'confirmed' => $confirmed
+		], $this->runtimeService->getExecutionVariables($process->getId()));
 		
 		$this->taskService->complete($task->getId());
 		$this->assertEquals(0, $this->runtimeService->createExecutionQuery()->count());
