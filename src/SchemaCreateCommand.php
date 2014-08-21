@@ -43,6 +43,11 @@ class SchemaCreateCommand extends AbstractCommand
 		
 		foreach(explode(';', file_get_contents($file)) as $chunk)
 		{
+			if('' == trim($chunk))
+			{
+				continue;
+			}
+			
 			$conn->execute($chunk);
 			
 			$output->writeLine('SQL >> ' . trim(preg_replace("'\s+'", ' ', $chunk)));

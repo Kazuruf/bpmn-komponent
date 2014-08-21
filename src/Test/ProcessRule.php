@@ -54,6 +54,11 @@ class ProcessRule extends AbstractTestRule
 		
 		foreach((array)explode(';', file_get_contents($file)) as $chunk)
 		{
+			if('' == trim($chunk))
+			{
+				continue;
+			}
+			
 			$this->conn->execute($chunk);
 		}
 		
