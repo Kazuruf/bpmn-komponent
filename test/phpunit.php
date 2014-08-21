@@ -28,6 +28,11 @@ spl_autoload_register(function($typeName) {
 		if(is_file($file)) {
 			require_once $file;
 		}
+		
+		$file = str_replace('\\', '/', __DIR__ . '/integration/' . $sub);
+		if(is_file($file)) {
+			require_once $file;
+		}
 	}
 });
 
