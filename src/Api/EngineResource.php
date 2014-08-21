@@ -57,21 +57,12 @@ class EngineResource
 	 */
 	public function deployDiagram(HttpRequest $request)
 	{
-		$tmp = new \SplTempFileObject();
-		
-		if($request->hasEntity())
+		if(!$request->hasEntity())
 		{
-			$in = $request->getEntity()->getInputStream();
-			
-			while($chunk = $in->read())
-			{
-				$tmp->fwrite($chunk);
-			}
-			
-			$tmp->rewind();
+			throw new \RuntimeException('No BPMN 2.0 process or collaboration diagram uploaded');
 		}
 		
-		$def = $this->repositoryService->deployDiagram($tmp->getPathname());
+		$def = $this->repositoryService->deployDiagram($request->getEntity()->getInputStream());
 		
 		$response = new HttpResponse(Http::CODE_CREATED);
 		$response->setHeader('Location', $this->uriGenerator->generate('show-definition', [
