@@ -50,6 +50,7 @@ class SchemaCreateCommand extends AbstractCommand
 			
 			$conn->execute($chunk);
 			
+			$output->writeLine('');
 			$output->writeLine('SQL >> ' . trim(preg_replace("'\s+'", ' ', $chunk)));
 		}
 	}
