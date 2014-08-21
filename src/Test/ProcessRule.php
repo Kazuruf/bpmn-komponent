@@ -19,6 +19,7 @@ use KoolKode\Database\PDO\Connection;
 use KoolKode\Event\EventDispatcherInterface;
 use KoolKode\Expression\ExpressionContextFactoryInterface;
 use KoolKode\K2\Test\AbstractTestRule;
+use KoolKode\K2\Test\TestCase;
 
 class ProcessRule extends AbstractTestRule
 {
@@ -42,7 +43,7 @@ class ProcessRule extends AbstractTestRule
 		$this->password = ($password === NULL) ? NULL : (string)$password;
 	}
 	
-	public function before()
+	public function before(TestCase $test)
 	{
 		$pdo = new \PDO($this->dsn, $this->username, $this->password);
 		
@@ -66,7 +67,7 @@ class ProcessRule extends AbstractTestRule
 		$this->container->bindInstance(ProcessEngineInterface::class, $this->engine);
 	}
 	
-	public function after()
+	public function after(TestCase $test)
 	{
 		static $tables = [
 			'#__process_subscription',
