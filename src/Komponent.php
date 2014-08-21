@@ -21,6 +21,7 @@ use KoolKode\Context\Bind\ContainerBuilder;
 use KoolKode\Context\Bind\SetterInjection;
 use KoolKode\Context\Scope\ApplicationScoped;
 use KoolKode\Context\Scope\Singleton;
+use KoolKode\K2\Console\Command;
 use KoolKode\K2\Komponent\AbstractKomponent;
 
 final class Komponent extends AbstractKomponent
@@ -37,6 +38,9 @@ final class Komponent extends AbstractKomponent
 	
 	public function build(ContainerBuilder $builder)
 	{
+		$builder->bind(SchemaCreateCommand::class)
+				->marked(new Command('bpmn', 'schema-create'));
+		
 		$builder->bind(DelegateTaskFactoryInterface::class)
 				->scoped(new Singleton())
 				->to(ContainerDelegateTaskFactory::class);
