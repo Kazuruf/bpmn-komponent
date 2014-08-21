@@ -6,12 +6,21 @@ use KoolKode\BPMN\Repository\RepositoryService;
 use KoolKode\BPMN\Runtime\RuntimeService;
 use KoolKode\BPMN\Task\TaskService;
 use KoolKode\Http\Http;
+use KoolKode\Http\HttpRequest;
 use KoolKode\Http\HttpResponse;
 use KoolKode\Rest\JsonEntity;
 use KoolKode\Rest\Route;
+use KoolKode\Router\UriGeneratorInterface;
 
 class EngineResource
 {
+	protected $uriGenerator;
+	
+	public function setUriGenerator(UriGeneratorInterface $uriGenerator)
+	{
+		$this->uriGenerator = $uriGenerator;
+	}
+	
 	protected $repositoryService;
 
 	public function setRepositoryService(RepositoryService $repositoryService)
@@ -41,6 +50,38 @@ class EngineResource
 		return new JsonEntity([
 			'definitions' => $this->repositoryService->createProcessDefinitionQuery()->findAll()
 		]);
+	}
+	
+	/**
+	 * @Route("POST /definitions")
+	 */
+	public function deployDiagram(HttpRequest $request)
+	{
+		$tmp = new \SplTempFileObject();
+		
+		if($request->hasEntity())
+		{
+			$in = $request->getEntity()->getInputStream();
+			
+			while($chunk = $in->read())
+			{
+				$tmp->fwrite($chunk);
+			}
+			
+			$tmp->rewind();
+		}
+		
+		$def = $this->repositoryService->deployDiagram($tmp->getPathname());
+		
+		$response = new HttpResponse(Http::CODE_CREATED);
+		$response->setHeader('Location', $this->uriGenerator->generate('show-definition', [
+			'id' => $def->getId()
+		]));
+		$response->setEntity(new JsonEntity([
+			'definition' => $def
+		]));
+		
+		return $response;
 	}
 	
 	/**
@@ -80,6 +121,9 @@ class EngineResource
 		$execution = $this->runtimeService->startProcessInstance($def, $businessKey, $vars);
 
 		$response = new HttpResponse(Http::CODE_CREATED);
+		$response->setHeader('Location', $this->uriGenerator->generate('show-execution', [
+			'id' => $execution->getId()
+		]));
 		$response->setEntity(new JsonEntity([
 			'execution' => $execution,
 			'variables' => $this->runtimeService->getExecutionVariables($execution->getId())
@@ -147,6 +191,24 @@ class EngineResource
 		return new JsonEntity([
 			'executions' => $query->findAll()
 		]);
+	}
+	
+	/**
+	 * @Route("POST /subscriptions/signal/{name}")
+	 */
+	public function sendSignal($name, JsonEntity $input)
+	{
+		$input = $input->toArray();
+		$executionId = array_key_exists('executionId', $input) ? $input['executionId'] : NULL;
+		$vars = array_key_exists('variables', $input) ? $input['variables'] : [];
+		$vars['registrationDate'] = (new \DateTime())->format(\DateTime::ISO8601);
+	
+		if($executionId !== NULL)
+		{
+			$executionId = $this->runtimeService->createExecutionQuery()->executionId($executionId)->findOne()->getId();
+		}
+	
+		$this->runtimeService->signalEventReceived($name, $executionId, $vars);
 	}
 
 	/**
