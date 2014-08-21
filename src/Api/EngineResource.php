@@ -1,5 +1,7 @@
 <?php
 
+namespace KoolKode\BPMN\Komponent\Api;
+
 use KoolKode\BPMN\Repository\RepositoryService;
 use KoolKode\BPMN\Runtime\RuntimeService;
 use KoolKode\BPMN\Task\TaskService;
