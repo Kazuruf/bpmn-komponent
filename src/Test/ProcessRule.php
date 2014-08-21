@@ -14,17 +14,16 @@ namespace KoolKode\BPMN\Komponent\Test;
 use KoolKode\BPMN\Delegate\DelegateTaskFactoryInterface;
 use KoolKode\BPMN\Engine\ProcessEngine;
 use KoolKode\BPMN\Engine\ProcessEngineInterface;
-use KoolKode\Context\ContainerInterface;
+use KoolKode\BPMN\Komponent\Komponent;
 use KoolKode\Database\PDO\Connection;
 use KoolKode\Event\EventDispatcherInterface;
 use KoolKode\Expression\ExpressionContextFactoryInterface;
+use KoolKode\K2\Komponent\KomponentLoader;
 use KoolKode\K2\Test\AbstractTestRule;
 use KoolKode\K2\Test\TestCase;
 
 class ProcessRule extends AbstractTestRule
 {
-	protected $container;
-	
 	protected $dsn;
 	
 	protected $username;
@@ -35,12 +34,16 @@ class ProcessRule extends AbstractTestRule
 	
 	protected $engine;
 	
-	public function __construct(ContainerInterface $container, $dsn = 'sqlite::memory:', $username = NULL, $password = NULL)
+	public function __construct($dsn = 'sqlite::memory:', $username = NULL, $password = NULL)
 	{
-		$this->container = $container;
 		$this->dsn = (string)$dsn;
 		$this->username = ($username === NULL) ? NULL : (string)$username;
 		$this->password = ($password === NULL) ? NULL : (string)$password;
+	}
+	
+	public function registerKomponents(KomponentLoader $komponents)
+	{
+		$komponents->registerKomponent(new Komponent());
 	}
 	
 	public function before(TestCase $test)

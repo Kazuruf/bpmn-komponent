@@ -11,20 +11,16 @@
 
 namespace KoolKode\BPMN\Komponent;
 
-use KoolKode\Context\Bind\Inject;
 use KoolKode\BPMN\Komponent\Test\ProcessRule;
 use KoolKode\BPMN\Repository\RepositoryService;
 use KoolKode\BPMN\Runtime\RuntimeService;
 use KoolKode\BPMN\Task\TaskInterface;
 use KoolKode\BPMN\Task\TaskService;
-use KoolKode\K2\Komponent\KomponentLoader;
+use KoolKode\Context\Bind\Inject;
 use KoolKode\K2\Test\TestCase;
 
 class ProcessEngineFactoryTest extends TestCase
 {
-	/**
-	 * @var ProcessRule
-	 */
 	protected $processRule;
 	
 	/**
@@ -45,14 +41,11 @@ class ProcessEngineFactoryTest extends TestCase
 	 */
 	protected $taskService;
 	
-	public function registerKomponents(KomponentLoader $komponents)
+	protected function setUpRules()
 	{
-		$komponents->registerKomponent(new \KoolKode\BPMN\Komponent\Komponent());
-	}
-	
-	public function createRules()
-	{
-		$this->processRule = new ProcessRule($this->container);
+		parent::setUpRules();
+		
+		$this->processRule = new ProcessRule();
 	}
 	
 	public function provideOrders()
