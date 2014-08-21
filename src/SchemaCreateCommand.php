@@ -18,7 +18,7 @@ use KoolKode\Console\InputInterface;
 use KoolKode\Console\OutputInterface;
 use KoolKode\Database\ConnectionManagerInterface;
 
-class CreateSchemaCommand extends AbstractCommand
+class SchemaCreateCommand extends AbstractCommand
 {
 	protected $manager;
 	
