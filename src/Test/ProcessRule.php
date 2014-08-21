@@ -11,63 +11,53 @@
 
 namespace KoolKode\BPMN\Komponent\Test;
 
-use KoolKode\BPMN\Delegate\DelegateTaskFactoryInterface;
-use KoolKode\BPMN\Engine\ProcessEngine;
 use KoolKode\BPMN\Engine\ProcessEngineInterface;
 use KoolKode\BPMN\Komponent\Komponent;
-use KoolKode\Database\PDO\Connection;
-use KoolKode\Event\EventDispatcherInterface;
-use KoolKode\Expression\ExpressionContextFactoryInterface;
+use KoolKode\Database\ConnectionInterface;
+use KoolKode\Database\ConnectionManagerInterface;
 use KoolKode\K2\Komponent\KomponentLoader;
 use KoolKode\K2\Test\AbstractTestRule;
 use KoolKode\K2\Test\TestCase;
+use KoolKode\K2\Test\TestConfigLoader;
 
 class ProcessRule extends AbstractTestRule
-{
-	protected $dsn;
-	
-	protected $username;
-	
-	protected $password;
-	
+{	
+	/**
+	 * @var ConnectionInterface
+	 */
 	protected $conn;
 	
+	/**
+	 * @var ProcessEngineInterface
+	 */
 	protected $engine;
-	
-	public function __construct($dsn = 'sqlite::memory:', $username = NULL, $password = NULL)
-	{
-		$this->dsn = (string)$dsn;
-		$this->username = ($username === NULL) ? NULL : (string)$username;
-		$this->password = ($password === NULL) ? NULL : (string)$password;
-	}
 	
 	public function registerKomponents(KomponentLoader $komponents)
 	{
 		$komponents->registerKomponent(new Komponent());
 	}
 	
+	public function loadConfigurationSources(TestConfigLoader $loader)
+	{
+		$loader->addFile(__DIR__ . DIRECTORY_SEPARATOR . 'ProcessRule.yml');
+	}
+	
+	public function bootConnection(ConnectionManagerInterface $manager)
+	{
+		$this->conn = $manager->getConnection('test-bpmn');
+	}
+	
 	public function before(TestCase $test)
 	{
-		$pdo = new \PDO($this->dsn, $this->username, $this->password);
+		$ref = new \ReflectionClass(ProcessEngineInterface::class);
+		$file = sprintf('%s/ProcessEngine.%s.sql', dirname($ref->getFileName()), $this->conn->getDriverName());
 		
-		$this->conn = new Connection($pdo);
-		
-		$ref = new \ReflectionClass(ProcessEngine::class);
-		$file = dirname($ref->getFileName()) . DIRECTORY_SEPARATOR . 'ProcessEngine.sqlite.sql';
-		$chunks = explode(';', file_get_contents($file));
-		
-		foreach($chunks as $chunk)
+		foreach((array)explode(';', file_get_contents($file)) as $chunk)
 		{
 			$this->conn->execute($chunk);
 		}
 		
-		$dispatcher = $this->container->get(EventDispatcherInterface::class);
-		$exp = $this->container->get(ExpressionContextFactoryInterface::class);
-		
-		$this->engine = new ProcessEngine($this->conn, $dispatcher, $exp);
-		$this->engine->setDelegateTaskFactory($this->container->get(DelegateTaskFactoryInterface::class));
-		
-		$this->container->bindInstance(ProcessEngineInterface::class, $this->engine);
+		$this->engine = $this->container->get(ProcessEngineInterface::class);
 	}
 	
 	public function after(TestCase $test)
@@ -81,9 +71,12 @@ class ProcessRule extends AbstractTestRule
 			'#__process_definition'
 		];
 		
-		foreach($tables as $table)
+		if($this->conn)
 		{
-			$this->conn->execute("DROP TABLE IF EXISTS `$table`");
+			foreach($tables as $table)
+			{
+				$this->conn->execute("DROP TABLE IF EXISTS `$table`");
+			}
 		}
 	}
 	

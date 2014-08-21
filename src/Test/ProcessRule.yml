@@ -1,0 +1,15 @@
+
+KoolKode:
+  BPMN:
+    Engine:
+      ProcessEngine:
+        connection: test-bpmn
+        transactional: true
+  Database:
+    ConnectionManager:
+      adapter:
+        test-bpmn:
+          dsn: 'sqlite::memory:'
+      connection:
+        test-bpmn:
+          adapter: test-bpmn

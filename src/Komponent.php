@@ -12,6 +12,7 @@
 namespace KoolKode\BPMN\Komponent;
 
 use KoolKode\BPMN\Delegate\DelegateTaskFactoryInterface;
+use KoolKode\BPMN\Engine\ProcessEngine;
 use KoolKode\BPMN\Engine\ProcessEngineInterface;
 use KoolKode\BPMN\Repository\RepositoryService;
 use KoolKode\BPMN\Runtime\RuntimeService;
@@ -45,6 +46,9 @@ final class Komponent extends AbstractKomponent
 				->marked(new SetterInjection());
 		
 		$builder->bind(ProcessEngineInterface::class)
+				->toAlias(ProcessEngine::class);
+		
+		$builder->bind(ProcessEngine::class)
 				->scoped(new ApplicationScoped())
 				->to(ProcessEngineFactory::class, 'createProcessEngine');
 		
