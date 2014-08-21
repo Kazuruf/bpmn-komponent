@@ -97,7 +97,7 @@ class ProcessEngineFactoryTest extends TestCase
 		$this->assertEquals([
 			'id' => $id,
 			'title' => $title,
-			'processor' => 'KoolKode\BPMN\Komponent\TestDelegateTask',
+			'processor' => ProcessorDelegateTask::class,
 			'confirmed' => $confirmed
 		], $this->runtimeService->getExecutionVariables($process->getId()));
 		
