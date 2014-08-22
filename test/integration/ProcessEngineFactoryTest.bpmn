@@ -3,7 +3,7 @@
   <bpmn2:collaboration id="foo">
     <bpmn2:participant id="_Participant_2" name="Process Engine Factory Test" processRef="main"/>
   </bpmn2:collaboration>
-  <bpmn2:process id="main" isExecutable="true">
+  <bpmn2:process id="main" name="Order Test Process" isExecutable="true">
     <bpmn2:startEvent id="StartEvent_1">
       <bpmn2:outgoing>SequenceFlow_1</bpmn2:outgoing>
     </bpmn2:startEvent>

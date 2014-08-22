@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of KoolKode BPMN Komponent.
+ *
+ * (c) Martin Schröder <m.schroeder2007@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace KoolKode\BPMN\Komponent\Api;
 
 use KoolKode\BPMN\Repository\RepositoryService;
@@ -165,7 +174,6 @@ class EngineResource
 	{
 		$input = $input->toArray();
 		$vars = array_key_exists('variables', $input) ? $input['variables'] : [];
-		$vars['registrationDate'] = (new \DateTime())->format(\DateTime::ISO8601);
 
 		$query = $this->runtimeService->createExecutionQuery()->executionId($input['executionId']);
 
@@ -192,7 +200,6 @@ class EngineResource
 		$input = $input->toArray();
 		$executionId = array_key_exists('executionId', $input) ? $input['executionId'] : NULL;
 		$vars = array_key_exists('variables', $input) ? $input['variables'] : [];
-		$vars['registrationDate'] = (new \DateTime())->format(\DateTime::ISO8601);
 	
 		if($executionId !== NULL)
 		{
