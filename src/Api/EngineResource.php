@@ -65,7 +65,7 @@ class EngineResource
 		$def = $this->repositoryService->deployDiagram($request->getEntity()->getInputStream());
 		
 		$response = new HttpResponse(Http::CODE_CREATED);
-		$response->setHeader('Location', $this->uriGenerator->generate('show-definition', [
+		$response->setHeader('Location', $this->uriGenerator->generate('../show-definition', [
 			'id' => $def->getId()
 		]));
 		$response->setEntity(new JsonEntity([
@@ -112,7 +112,7 @@ class EngineResource
 		$execution = $this->runtimeService->startProcessInstance($def, $businessKey, $vars);
 
 		$response = new HttpResponse(Http::CODE_CREATED);
-		$response->setHeader('Location', $this->uriGenerator->generate('show-execution', [
+		$response->setHeader('Location', $this->uriGenerator->generate('../show-execution', [
 			'id' => $execution->getId()
 		]));
 		$response->setEntity(new JsonEntity([
