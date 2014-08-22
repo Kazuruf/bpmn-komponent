@@ -19,6 +19,8 @@ use KoolKode\BPMN\Task\TaskService;
 use KoolKode\Context\Bind\Inject;
 use KoolKode\K2\Test\TestCase;
 
+// TODO: Test the same process using the REST-API.
+
 class ProcessEngineFactoryTest extends TestCase
 {
 	protected $processRule;

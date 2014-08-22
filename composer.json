@@ -25,8 +25,13 @@
 	},
 	"autoload" : {
 		"psr-4" : {
-			"KoolKode\\BPMN\\Komponent\\" : "src"
+			"KoolKode\\BPMN\\Komponent\\" : "src/"
 		}
 	},
+	"autoload-dev" : {
+        "psr-4" : {
+            "KoolKode\\BPMN\\Komponent\\" : "test/src/"
+        }
+    },
 	"minimum-stability" : "dev"
 }
