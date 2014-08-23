@@ -30,7 +30,7 @@ use KoolKode\Http\UriBuilder;
 use KoolKode\K2\Test\TestCase;
 use KoolKode\Rest\JsonEntity;
 
-class ProcessEngineFactoryTest extends TestCase
+class MultiApiTest extends TestCase
 {
 	protected $processRule;
 	
@@ -82,7 +82,7 @@ class ProcessEngineFactoryTest extends TestCase
 	 */
 	public function testMultipleInvocationsUsingDataProvider($id, $title, $confirmed)
 	{
-		$this->processRule->deployFile('ProcessEngineFactoryTest.bpmn');
+		$this->processRule->deployFile('MultiApiTest.bpmn');
 		
 		$this->assertEquals(0, $this->runtimeService->createExecutionQuery()->count());
 		
@@ -131,10 +131,10 @@ class ProcessEngineFactoryTest extends TestCase
 		$response = $this->httpRule->dispatch(new HttpRequest(new Uri('http://test.me/bpmn/definitions')));
 		$this->assertEquals(Http::CODE_OK, $response->getStatus());
 		$this->assertTrue($response->getMediaType()->is('application/json'));
-		$this->assertEquals(['definitions' => []], json_decode($response->getContents(), true));
+		$this->assertCount(0, json_decode($response->getContents(), true)['definitions']);
 		
 		$request = new HttpRequest(new Uri('http://test.me/bpmn/definitions'), Http::METHOD_POST);
-		$request->setEntity(new FileEntity(new \SplFileInfo(__DIR__ . '/ProcessEngineFactoryTest.bpmn')));
+		$request->setEntity(new FileEntity(new \SplFileInfo(__DIR__ . '/MultiApiTest.bpmn')));
 		$response = $this->httpRule->dispatch($request);
 		$this->assertEquals(Http::CODE_CREATED, $response->getStatus());
 		$this->assertTrue($response->getMediaType()->is('application/json'));
@@ -185,8 +185,65 @@ class ProcessEngineFactoryTest extends TestCase
 			'productId' => 283745
 		]));
 		$response = $this->httpRule->dispatch($request);
+		$this->assertEquals(Http::CODE_OK, $response->getStatus());
+		$this->assertTrue($response->getMediaType()->is('application/json'));
 		
-		// TODO: Continue running the process.
-		// Could really benefit from some more methods in HttpRule and custom assertions in a trait or something!?
+		$payload = json_decode($response->getContents(), true);
+		$this->assertEquals($executionId, $payload['task']['executionId']);
+		
+		$builder = new UriBuilder('http://test.me/bpmn/executions/{id}/message/{message}');
+		$builder->pathParam('id', $executionId);
+		$builder->pathParam('message', 'OrderRegistrationReceived');
+		
+		$request = new HttpRequest($builder->build(), Http::METHOD_POST);
+		$request->setEntity(new JsonEntity([
+			'confirmed' => true
+		]));
+		$response = $this->httpRule->dispatch($request);
+		$this->assertEquals(Http::CODE_OK, $response->getStatus());
+		$this->assertTrue($response->getMediaType()->is('application/json'));
+		
+		$request = new HttpRequest(new Uri('http://test.me/bpmn/tasks'));
+		$response = $this->httpRule->dispatch($request);
+		$this->assertEquals(Http::CODE_OK, $response->getStatus());
+		$this->assertTrue($response->getMediaType()->is('application/json'));
+		
+		$payload = json_decode($response->getContents(), true);
+		$this->assertArrayHasKey('tasks', $payload);
+		$this->assertCount(1, $payload['tasks']);
+		$task = array_pop($payload['tasks']);
+		$this->assertEquals($executionId, $task['executionId']);
+		$this->assertEquals('verifyRegistration', $task['activityId']);
+		
+		$builder = new UriBuilder('http://test.me/bpmn/tasks/{id}');
+		$builder->pathParam('id', $task['id']);
+		
+		$response = $this->httpRule->dispatch(new HttpRequest($builder->build()));
+		$this->assertEquals(Http::CODE_OK, $response->getStatus());
+		$this->assertTrue($response->getMediaType()->is('application/json'));
+		
+		$payload = json_decode($response->getContents(), true);
+		$this->assertEquals([
+			'subject' => 'world',
+			'id' => 1248,
+			'productId' => 283745,
+			'confirmed' => true,
+			'processor' => ProcessorDelegateTask::class
+		], $payload['variables']);
+		
+		$request = new HttpRequest($builder->build(), Http::METHOD_POST);
+		$request->setEntity(new JsonEntity([
+			'verified' => true
+		]));
+		$response = $this->httpRule->dispatch($request);
+		$this->assertEquals(Http::CODE_OK, $response->getStatus());
+		$this->assertTrue($response->getMediaType()->is('application/json'));
+		
+		$response = $this->httpRule->dispatch(new HttpRequest(new Uri('http://test.me/bpmn/executions')));
+		$this->assertEquals(Http::CODE_OK, $response->getStatus());
+		$this->assertTrue($response->getMediaType()->is('application/json'));
+		
+		$payload = json_decode($response->getContents(), true);
+		$this->assertCount(0, $payload['executions']);
 	}
 }
