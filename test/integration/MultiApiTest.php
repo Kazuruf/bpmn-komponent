@@ -84,7 +84,7 @@ class MultiApiTest extends TestCase
 	{
 		if($confirmed)
 		{
-			$this->processRule->deployFile('MultiApiTest.bpmn');
+			$this->processRule->deployDirectory('MultiApiTest');
 		}
 		else
 		{
@@ -133,18 +133,29 @@ class MultiApiTest extends TestCase
 		$this->assertEquals(0, $this->runtimeService->createExecutionQuery()->count());
 	}
 	
-	public function testUsingRestApi()
+	public function provideArchiveSetting()
+	{
+		return [
+			[false, __DIR__ . '/MultiApiTest/Process/MultiApiTest.bpmn'],
+			[true, __DIR__ . '/MultiApiTest.zip']
+		];
+	}
+	
+	/**
+	 * @dataProvider provideArchiveSetting
+	 */
+	public function testUsingRestApi($archive, $file)
 	{
 		$response = $this->httpRule->dispatch(new HttpRequest(new Uri('http://test.me/bpmn/definitions')));
 		$this->assertEquals(Http::CODE_OK, $response->getStatus());
 		$this->assertTrue($response->getMediaType()->is('application/json'));
 		$this->assertCount(0, json_decode($response->getContents(), true)['definitions']);
 		
-		$builder = new UriBuilder('http://test.me/bpmn/deployments/archive');
+		$builder = new UriBuilder('http://test.me/bpmn/deployments/' . ($archive ? 'archive' : 'file'));
 		$builder->param('name', 'Some Test Process');
 		
 		$request = new HttpRequest($builder->build(), Http::METHOD_POST);
-		$request->setEntity(new FileEntity(new \SplFileInfo(__DIR__ . '/MultiApiTest.zip')));
+		$request->setEntity(new FileEntity(new \SplFileInfo($file)));
 		
 		$response = $this->httpRule->dispatch($request);
 		$this->assertEquals(Http::CODE_CREATED, $response->getStatus());

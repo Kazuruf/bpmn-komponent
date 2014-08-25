@@ -117,6 +117,25 @@ class ProcessRule extends AbstractTestRule
 		return $this->getRepositoryService()->deployProcess(new \SplFileInfo($file), $name);
 	}
 	
+	public function deployDirectory($dir, $name = NULL, array $extensions = [])
+	{
+		if(!preg_match("'^(?:(?:[a-z]:)|(/+)|([^:]+://))'i", $dir))
+		{
+			$dir = getcwd() . DIRECTORY_SEPARATOR . $dir;
+		}
+	
+		if($name === NULL)
+		{
+			$name = basename($dir);
+		}
+	
+		$builder = $this->getRepositoryService()->createDeployment($name);
+		$builder->addExtensions($extensions);
+		$builder->addDirectory($dir);
+	
+		return $this->getRepositoryService()->deploy($builder);
+	}
+	
 	public function deployArchive($file, $name = NULL, array $extensions = [])
 	{
 		if(!preg_match("'^(?:(?:[a-z]:)|(/+)|([^:]+://))'i", $file))
