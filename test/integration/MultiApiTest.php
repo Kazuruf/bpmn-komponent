@@ -82,7 +82,14 @@ class MultiApiTest extends TestCase
 	 */
 	public function testMultipleInvocationsUsingDataProvider($id, $title, $confirmed)
 	{
-		$this->processRule->deployFile('MultiApiTest.bpmn');
+		if($confirmed)
+		{
+			$this->processRule->deployFile('MultiApiTest.bpmn');
+		}
+		else
+		{
+			$this->processRule->deployArchive('MultiApiTest.zip');
+		}
 		
 		$this->assertEquals(0, $this->runtimeService->createExecutionQuery()->count());
 		

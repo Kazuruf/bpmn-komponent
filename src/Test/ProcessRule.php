@@ -107,13 +107,32 @@ class ProcessRule extends AbstractTestRule
 		return $this->engine->getTaskService();
 	}
 	
-	public function deployFile($file)
+	public function deployFile($file, $name = NULL)
 	{
 		if(!preg_match("'^(?:(?:[a-z]:)|(/+)|([^:]+://))'i", $file))
 		{
 			$file = getcwd() . DIRECTORY_SEPARATOR . $file;
 		}
 	
-		return $this->getRepositoryService()->deployProcess(new \SplFileInfo($file));
+		return $this->getRepositoryService()->deployProcess(new \SplFileInfo($file), $name);
+	}
+	
+	public function deployArchive($file, $name = NULL, array $extensions = [])
+	{
+		if(!preg_match("'^(?:(?:[a-z]:)|(/+)|([^:]+://))'i", $file))
+		{
+			$file = getcwd() . DIRECTORY_SEPARATOR . $file;
+		}
+		
+		if($name === NULL)
+		{
+			$name = basename($file);
+		}
+		
+		$builder = $this->getRepositoryService()->createDeployment($name);
+		$builder->addExtensions($extensions);
+		$builder->addArchive($file);
+	
+		return $this->getRepositoryService()->deploy($builder);
 	}
 }
