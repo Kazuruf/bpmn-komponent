@@ -133,15 +133,26 @@ class MultiApiTest extends TestCase
 		$this->assertTrue($response->getMediaType()->is('application/json'));
 		$this->assertCount(0, json_decode($response->getContents(), true)['definitions']);
 		
-		$request = new HttpRequest(new Uri('http://test.me/bpmn/definitions'), Http::METHOD_POST);
-		$request->setEntity(new FileEntity(new \SplFileInfo(__DIR__ . '/MultiApiTest.bpmn')));
+		$builder = new UriBuilder('http://test.me/bpmn/deployments/archive');
+		$builder->param('name', 'Some Test Process');
+		
+		$request = new HttpRequest($builder->build(), Http::METHOD_POST);
+		$request->setEntity(new FileEntity(new \SplFileInfo(__DIR__ . '/MultiApiTest.zip')));
+		
 		$response = $this->httpRule->dispatch($request);
 		$this->assertEquals(Http::CODE_CREATED, $response->getStatus());
 		$this->assertTrue($response->getMediaType()->is('application/json'));
 		
 		$payload = json_decode($response->getContents(), true);
-		$this->assertArrayHasKey('definition', $payload);
-		$this->assertTrue(is_array($payload['definition']));
+		$this->assertArrayHasKey('definitions', $payload);
+		$this->assertTrue(is_array($payload['definitions']));
+		
+		$definition = array_pop($payload['definitions']);
+		$this->assertTrue(is_array($definition));
+		$this->assertArrayHasKey('id', $definition);
+		
+		$builder = new UriBuilder('http://test.me/bpmn/definitions/{id}');
+		$builder->pathParam('id', $definition['id']);
 		
 		$businessKey = 'Hello World :)';
 		$vars = [
@@ -149,7 +160,7 @@ class MultiApiTest extends TestCase
 			'id' => 1248
 		];
 		
-		$request = new HttpRequest(new Uri($response->getHeader('Location')), Http::METHOD_POST);
+		$request = new HttpRequest($builder->build(), Http::METHOD_POST);
 		$request->setEntity(new JsonEntity([
 			'businessKey' => $businessKey,
 			'variables' => $vars

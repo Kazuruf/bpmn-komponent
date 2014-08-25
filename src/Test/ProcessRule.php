@@ -73,7 +73,9 @@ class ProcessRule extends AbstractTestRule
 			'#__user_task',
 			'#__execution_variables',
 			'#__execution',
-			'#__process_definition'
+			'#__process_definition',
+			'#__resource',
+			'#__deployment'
 		];
 		
 		if($this->conn)
@@ -112,6 +114,6 @@ class ProcessRule extends AbstractTestRule
 			$file = getcwd() . DIRECTORY_SEPARATOR . $file;
 		}
 	
-		return $this->getRepositoryService()->deployDiagram($file);
+		return $this->getRepositoryService()->deployProcess(new \SplFileInfo($file));
 	}
 }

@@ -24,11 +24,11 @@ use KoolKode\Router\UriGeneratorInterface;
 
 class EngineResource
 {
-	protected $uriGenerator;
+	protected $uri;
 	
-	public function setUriGenerator(UriGeneratorInterface $uriGenerator)
+	public function setUri(UriGeneratorInterface $uri)
 	{
-		$this->uriGenerator = $uriGenerator;
+		$this->uri = $uri;
 	}
 	
 	protected $repositoryService;
@@ -51,6 +51,116 @@ class EngineResource
 	{
 		$this->taskService = $taskService;
 	}
+	
+	/**
+	 * @Route("GET /deployments")
+	 */
+	public function listDeployments()
+	{
+		return new JsonEntity([
+			'deployments' => $this->repositoryService->createDeploymentQuery()->findAll(),
+			'_links' => [
+				'details' => $this->uri->generate('../show-deployment'),
+				'deploy-archive' => $this->uri->generate('../deploy-archive'),
+				'deploy-file' => $this->uri->generate('../deploy-file')
+			]
+		]);
+	}
+	
+	/**
+	 * @Route("GET /deployments/{id}")
+	 */
+	public function showDeployment($id)
+	{
+		$deployment = $this->repositoryService->createDeploymentQuery()->deploymentId($id)->findOne();
+		
+		return new JsonEntity([
+			'deployment' => $deployment,
+			'resources' => array_values($deployment->findResources())
+		]);
+	}
+	
+	/**
+	 * @Route("POST /deployments/file")
+	 */
+	public function deployFile(HttpRequest $request, $name = '')
+	{
+		if(!$request->hasEntity())
+		{
+			throw new \RuntimeException('No file has been uploaded');
+		}
+		
+		$builder = $this->repositoryService->createDeployment($name);
+		$builder->addResource('process.bpmn', $request->getEntity()->getInputStream());
+		
+		$deployment = $this->repositoryService->deploy($builder);
+		$definitions = $this->repositoryService->createProcessDefinitionQuery()->deploymentId($deployment->getId())->findAll();
+		
+		$response = new HttpResponse(Http::CODE_CREATED);
+		$response->setHeader('Location', $this->uri->generate('../show-deployment', [
+			'id' => $deployment->getId()
+		]));
+		$response->setEntity(new JsonEntity([
+			'deployment' => $deployment,
+			'definitions' => $definitions,
+			'resources' => array_values($deployment->findResources()),
+			'_links' => [
+				'details' => $this->uri->generate('../show-deployment', ['id' => $deployment->getId()])
+			]
+		]));
+		
+		return $response;
+	}
+	
+	/**
+	 * @Route("POST /deployments/archive")
+	 */
+	public function deployArchive(HttpRequest $request, $name = '', array $extensions = [])
+	{
+		if(!$request->hasEntity())
+		{
+			throw new \RuntimeException('No file has been uploaded');
+		}
+		
+		$builder = $this->repositoryService->createDeployment($name);
+		$builder->addExtensions($extensions);
+		
+		$in = $request->getEntity()->getInputStream();
+		$archive = tempnam(sys_get_temp_dir(), 'era');
+		$fp = fopen($archive, 'wb');
+		
+		try
+		{
+			while($chunk = $in->read())
+			{
+				fwrite($fp, $chunk);
+			}
+		}
+		finally
+		{
+			@fclose($fp);
+		}
+		
+		$builder->addArchive($archive);
+		
+		$deployment = $this->repositoryService->deploy($builder);
+		$definitions = $this->repositoryService->createProcessDefinitionQuery()->deploymentId($deployment->getId())->findAll();
+		
+		$response = new HttpResponse(Http::CODE_CREATED);
+		$response->setHeader('Location', $this->uri->generate('../show-deployment', [
+			'id' => $deployment->getId()
+		]));
+		$response->setEntity(new JsonEntity([
+			'deployment' => $deployment,
+			'definitions' => $definitions,
+			'resources' => array_values($deployment->findResources()),
+			'_links' => [
+				'details' => $this->uri->generate('../show-deployment', ['id' => $deployment->getId()])
+			]
+		]));
+		
+		return $response;
+	}
 
 	/**
 	 * @Route("GET /definitions")
@@ -60,33 +170,9 @@ class EngineResource
 		return new JsonEntity([
 			'definitions' => $this->repositoryService->createProcessDefinitionQuery()->findAll(),
 			'_links' => [
-				'deploy' => $this->uriGenerator->generate('../deploy-diagram')
+				'detail' => $this->uri->generate('../show-definition')
 			]
 		]);
-	}
-	
-	/**
-	 * @Route("POST /definitions")
-	 */
-	public function deployDiagram(HttpRequest $request)
-	{
-		if(!$request->hasEntity())
-		{
-			throw new \RuntimeException('No BPMN 2.0 process or collaboration diagram uploaded');
-		}
-		
-		$def = $this->repositoryService->deployDiagram($request->getEntity()->getInputStream());
-		
-		$response = new HttpResponse(Http::CODE_CREATED);
-		$response->setHeader('Location', $this->uriGenerator->generate('../show-definition', ['id' => $def->getId()]));
-		$response->setEntity(new JsonEntity([
-			'definition' => $def,
-			'_links' => [
-				'start' => $this->uriGenerator->generate('../start-process', ['id' => $def->getId()])
-			]
-		]));
-		
-		return $response;
 	}
 
 	/**
@@ -100,18 +186,9 @@ class EngineResource
 		return new JsonEntity([
 			'definition' => $def,
 			'_links' => [
-				'start' => $this->uriGenerator->generate('../start-process', ['id' => $def->getId()])
+				'start' => $this->uri->generate('../start-process', ['id' => $def->getId()])
 			]
 		]);
-	}
-	
-	protected function createExecutionLinks(ExecutionInterface $execution)
-	{
-		return [
-			'self' => $this->uriGenerator->generate('../show-execution', ['id' => $execution->getId()]),
-			'message' => $this->uriGenerator->generate('../send-message', ['id' => $execution->getId()]),
-			'signal' => $this->uriGenerator->generate('../send-signal', ['id' => $execution->getId()])
-		];
 	}
 
 	/**
@@ -127,7 +204,7 @@ class EngineResource
 		$execution = $this->runtimeService->startProcessInstance($def, $businessKey, $vars);
 
 		$response = new HttpResponse(Http::CODE_CREATED);
-		$response->setHeader('Location', $this->uriGenerator->generate('../show-execution', [
+		$response->setHeader('Location', $this->uri->generate('../show-execution', [
 			'id' => $execution->getId()
 		]));
 		$response->setEntity(new JsonEntity([
@@ -140,6 +217,15 @@ class EngineResource
 
 		return $response;
 	}
+	
+	protected function createExecutionLinks(ExecutionInterface $execution)
+	{
+		return [
+			'self' => $this->uri->generate('../show-execution', ['id' => $execution->getId()]),
+			'message' => $this->uri->generate('../send-message', ['id' => $execution->getId()]),
+			'signal' => $this->uri->generate('../send-signal', ['id' => $execution->getId()])
+		];
+	}
 
 	/**
 	 * @Route("GET /executions")
@@ -149,7 +235,7 @@ class EngineResource
 		return new JsonEntity([
 			'executions' => $this->runtimeService->createExecutionQuery()->findAll(),
 			'_links' => [
-				'signal' => $this->uriGenerator->generate('../broadcast-signal')
+				'signal' => $this->uri->generate('../broadcast-signal')
 			]
 		]);
 	}
@@ -182,7 +268,7 @@ class EngineResource
 		
 		return new JsonEntity([
 			'_links' => [
-				'execution' => $this->uriGenerator->generate('../show-execution', ['id' => $execution->getId()])
+				'execution' => $this->uri->generate('../show-execution', ['id' => $execution->getId()])
 			]
 		]);
 	}
@@ -231,7 +317,7 @@ class EngineResource
 		
 		return new JsonEntity([
 			'_links' => [
-				'execution' => $this->uriGenerator->generate('../show-execution', ['id' => $execution->getId()])
+				'execution' => $this->uri->generate('../show-execution', ['id' => $execution->getId()])
 			]
 		]);
 	}
@@ -257,8 +343,8 @@ class EngineResource
 			'task' => $task,
 			'variables' => $this->runtimeService->getExecutionVariables($task->getExecutionId()),
 			'_links' => [
-				'complete' => $this->uriGenerator->generate('../complete-task', ['id' => $task->getId()]),
-				'execution' => $this->uriGenerator->generate('../show-execution', ['id' => $task->getExecutionId()])
+				'complete' => $this->uri->generate('../complete-task', ['id' => $task->getId()]),
+				'execution' => $this->uri->generate('../show-execution', ['id' => $task->getExecutionId()])
 			]
 		]);
 	}
@@ -286,7 +372,7 @@ class EngineResource
 			'task' => $task,
 			'variables' => $vars,
 			'_links' => [
-				'execution' => $this->uriGenerator->generate('../show-execution', ['id' => $task->getExecutionId()])
+				'execution' => $this->uri->generate('../show-execution', ['id' => $task->getExecutionId()])
 			]
 		]);
 	}
