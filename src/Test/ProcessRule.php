@@ -12,6 +12,7 @@
 namespace KoolKode\BPMN\Komponent\Test;
 
 use KoolKode\BPMN\Engine\ProcessEngineInterface;
+use KoolKode\BPMN\Komponent\BusinessProcessScopeManager;
 use KoolKode\BPMN\Komponent\Komponent;
 use KoolKode\Database\ConnectionInterface;
 use KoolKode\Database\ConnectionManagerInterface;
@@ -31,6 +32,11 @@ class ProcessRule extends AbstractTestRule
 	 * @var ProcessEngineInterface
 	 */
 	protected $engine;
+	
+	/**
+	 * @var BusinessProcessScopeManager
+	 */
+	protected $scope;
 	
 	public function registerKomponents(KomponentLoader $komponents)
 	{
@@ -63,6 +69,7 @@ class ProcessRule extends AbstractTestRule
 		}
 		
 		$this->engine = $this->container->get(ProcessEngineInterface::class);
+		$this->scope = $this->container->get(BusinessProcessScopeManager::class);
 	}
 	
 	public function after(TestCase $test)
@@ -105,6 +112,11 @@ class ProcessRule extends AbstractTestRule
 	public function getTaskService()
 	{
 		return $this->engine->getTaskService();
+	}
+	
+	public function getProcessScope()
+	{
+		return $this->scope;
 	}
 	
 	public function deployFile($file, $name = NULL)

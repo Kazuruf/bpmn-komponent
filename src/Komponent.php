@@ -20,11 +20,14 @@ use KoolKode\BPMN\Task\TaskService;
 use KoolKode\Context\Bind\ContainerBuilder;
 use KoolKode\Context\Bind\SetterInjection;
 use KoolKode\Context\Scope\ApplicationScoped;
+use KoolKode\Context\Scope\ScopeLoader;
+use KoolKode\Context\Scope\ScopeProviderInterface;
 use KoolKode\Context\Scope\Singleton;
 use KoolKode\K2\Console\Command;
 use KoolKode\K2\Komponent\AbstractKomponent;
+use KoolKode\BPMN\Delegate\DelegateExecutionInterface;
 
-final class Komponent extends AbstractKomponent
+final class Komponent extends AbstractKomponent implements ScopeProviderInterface
 {
 	public function getKey()
 	{
@@ -36,10 +39,18 @@ final class Komponent extends AbstractKomponent
 		return 'https://github.com/koolkode/bpmn-komponent';
 	}
 	
+	public function loadScopes(ScopeLoader $loader)
+	{
+		$loader->registerScope(new BusinessProcessScopeManager());
+	}
+	
 	public function build(ContainerBuilder $builder)
 	{
 		$builder->bind(SchemaCreateCommand::class)
 				->marked(new Command('bpmn', 'schema-create'));
+		
+		$builder->bind(DelegateExecutionInterface::class)
+				->marked(new BusinessProcessScoped());
 		
 		$builder->bind(DelegateTaskFactoryInterface::class)
 				->scoped(new Singleton())

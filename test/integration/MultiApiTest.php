@@ -67,6 +67,9 @@ class MultiApiTest extends TestCase
 		$builder->bind(EngineResource::class)
 				->marked(new RestResource('/bpmn', 'bpmn'))
 				->marked(new SetterInjection());
+		
+		$builder->bind(ExampleTaskHandler::class)
+				->marked(new TaskHandler('transmitOrder', 'main'));
 	}
 	
 	public function provideOrders()
@@ -126,6 +129,8 @@ class MultiApiTest extends TestCase
 			'id' => $id,
 			'title' => $title,
 			'processor' => ProcessorDelegateTask::class,
+			'handler' => ExampleTaskHandler::class,
+			'executionVerified' => true,
 			'confirmed' => $confirmed
 		], $this->runtimeService->getExecutionVariables($process->getId()));
 		
@@ -257,7 +262,9 @@ class MultiApiTest extends TestCase
 			'id' => 1248,
 			'productId' => 283745,
 			'confirmed' => true,
-			'processor' => ProcessorDelegateTask::class
+			'processor' => ProcessorDelegateTask::class,
+			'handler' => ExampleTaskHandler::class,
+			'executionVerified' => true
 		], $payload['variables']);
 		
 		$request = new HttpRequest($builder->build(), Http::METHOD_POST);

@@ -13,15 +13,19 @@ namespace KoolKode\BPMN\Komponent;
 
 use KoolKode\BPMN\Delegate\DelegateTaskFactoryInterface;
 use KoolKode\BPMN\Engine\ProcessEngine;
+use KoolKode\BPMN\Delegate\Event\TaskExecutedEvent;
 use KoolKode\Config\Configuration;
+use KoolKode\Context\ContainerInterface;
+use KoolKode\Context\Bind\BindingInterface;
 use KoolKode\Database\ConnectionManagerInterface;
-use KoolKode\Event\EventDispatcherInterface;
+use KoolKode\Event\EventDispatcher;
 use KoolKode\Expression\ExpressionContextFactoryInterface;
+use KoolKode\Process\Event\AbstractProcessEvent;
 use Psr\Log\LoggerInterface;
 
 class ProcessEngineFactory
 {
-	protected $dispatcher;
+	protected $container;
 	
 	protected $factory;
 	
@@ -29,9 +33,11 @@ class ProcessEngineFactory
 	
 	protected $taskFactory;
 	
-	public function __construct(EventDispatcherInterface $dispatcher, ExpressionContextFactoryInterface $factory)
+	protected $scope;
+	
+	public function __construct(ContainerInterface $container, ExpressionContextFactoryInterface $factory)
 	{
-		$this->dispatcher = $dispatcher;
+		$this->container = $container;
 		$this->factory = $factory;
 	}
 	
@@ -45,14 +51,48 @@ class ProcessEngineFactory
 		$this->taskFactory = $taskFactory;
 	}
 	
+	public function setBusinessProcessScope(BusinessProcessScopeManager $scope)
+	{
+		$this->scope = $scope;
+	}
+	
 	public function createProcessEngine(Configuration $config, LoggerInterface $logger = NULL)
 	{
 		$conn = $this->connectionManager->getConnection($config->getString('connection', 'default'));
 		$transactional = $config->getBoolean('transactional', true);
 		
-		$engine = new ProcessEngine($conn, $this->dispatcher, $this->factory, $transactional);
+		$dispatcher = $this->container->get(EventDispatcher::class);
+		
+		$engine = new ProcessEngine($conn, $dispatcher, $this->factory, $transactional);
 		$engine->setDelegateTaskFactory($this->taskFactory);
+		$engine->registerExecutionInterceptor(new ScopeExecutionInterceptor($this->scope));
 		$engine->setLogger($logger);
+		
+		$dispatcher->connect(function(AbstractProcessEvent $event) {
+			$this->scope->enterContext($event->execution);
+		});
+		
+		$dispatcher->connect(function(TaskExecutedEvent $event) {
+			
+			$query = $event->engine->getRuntimeService()->createExecutionQuery();
+			$query->executionId($event->execution->getExecutionId());
+			
+			$definition = $query->findOne()->getProcessDefinition();
+			$processKey = $definition->getKey();
+			$taskKey = $event->execution->getActivityId();
+			
+			$this->container->eachMarked(function(TaskHandler $handler, BindingInterface $binding) use($event, $taskKey, $processKey) {
+				if($taskKey == $handler->taskKey) {
+					if($handler->processKey === NULL || $handler->processKey == $processKey) {
+						$task = $this->container->getBound($binding);
+						if(!$task instanceof TaskHandlerInterface) {
+							throw new \RuntimeException('Invalid task handler implementation: ' . get_class($task));
+						}
+						$task->executeTask($event->execution);
+					}
+				}
+			});
+		});
 		
 		return $engine;
 	}
