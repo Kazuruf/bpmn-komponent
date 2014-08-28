@@ -131,7 +131,7 @@ class EngineResource
 		
 		try
 		{
-			while($chunk = $in->read())
+			while(false !== ($chunk = $in->read()))
 			{
 				fwrite($fp, $chunk);
 			}
