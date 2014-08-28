@@ -49,9 +49,6 @@ final class Komponent extends AbstractKomponent implements ScopeProviderInterfac
 		$builder->bind(SchemaCreateCommand::class)
 				->marked(new Command('bpmn', 'schema-create'));
 		
-		$builder->bind(DelegateExecutionInterface::class)
-				->marked(new BusinessProcessScoped());
-		
 		$builder->bind(DelegateTaskFactoryInterface::class)
 				->scoped(new Singleton())
 				->to(ContainerDelegateTaskFactory::class);
