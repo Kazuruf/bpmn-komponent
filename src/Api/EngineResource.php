@@ -13,9 +13,12 @@ namespace KoolKode\BPMN\Komponent\Api;
 
 use KoolKode\BPMN\Repository\DeployedResource;
 use KoolKode\BPMN\Repository\Deployment;
+use KoolKode\BPMN\Repository\ProcessDefinition;
 use KoolKode\BPMN\Repository\RepositoryService;
+use KoolKode\BPMN\Runtime\Execution;
 use KoolKode\BPMN\Runtime\ExecutionInterface;
 use KoolKode\BPMN\Runtime\RuntimeService;
+use KoolKode\BPMN\Task\TaskInterface;
 use KoolKode\BPMN\Task\TaskService;
 use KoolKode\Http\Exception\NotFoundException;
 use KoolKode\Http\Http;
@@ -24,9 +27,6 @@ use KoolKode\Http\HttpResponse;
 use KoolKode\Rest\JsonEntity;
 use KoolKode\Rest\Route;
 use KoolKode\Router\UriGeneratorInterface;
-use KoolKode\BPMN\Repository\ProcessDefinition;
-use KoolKode\BPMN\Runtime\Execution;
-use KoolKode\BPMN\Task\TaskInterface;
 
 class EngineResource
 {
@@ -330,14 +330,30 @@ class EngineResource
 	 */
 	public function listExecutions()
 	{
-		return new JsonEntity([
-			'executions' => $this->runtimeService->createExecutionQuery()->findAll(),
+		$executions = $this->runtimeService->createExecutionQuery()->findAll();
+		
+		$json = new HalJsonEntity([
+			'count' => count($executions),
 			'_links' => [
+				'self' => $this->uri->generate('../list-executions'),
 				'bpmn:signal' => $this->uri->generate('../broadcast-signal')->toArray([
 					'title' => 'Broadcast a signal to all listening processes and executions'
 				])
+			],
+			'_embedded' => [
+				'executions' => $executions
 			]
 		]);
+		
+		$json->decorate(function(Execution $execution) {
+			return [
+				'_links' => [
+					'self' => $this->uri->generate('../show-execution', ['id' => $execution->getId()])
+				]
+			];
+		});
+		
+		return $json;
 	}
 
 	/**
