@@ -24,6 +24,9 @@ use KoolKode\Http\HttpResponse;
 use KoolKode\Rest\JsonEntity;
 use KoolKode\Rest\Route;
 use KoolKode\Router\UriGeneratorInterface;
+use KoolKode\BPMN\Repository\ProcessDefinition;
+use KoolKode\BPMN\Runtime\Execution;
+use KoolKode\BPMN\Task\TaskInterface;
 
 class EngineResource
 {
@@ -81,7 +84,7 @@ class EngineResource
 				'_links' => [
 					'self' => $this->uri->generate('../show-deployment', [
 						'id' => $deployment->getId()
-					])->toArray(['title' => 'Show resource meta information'])
+					])
 				]
 			];
 		});
@@ -115,7 +118,7 @@ class EngineResource
 					'self' => $this->uri->generate('../show-resource', [
 						'id' => $resource->getDeployment()->getId(),
 						'path' => explode('/', $resource->getName())
-					])
+					])->toArray(['title' => 'Show resource meta data'])
 				]
 			];
 		});
@@ -177,7 +180,7 @@ class EngineResource
 			'definitions' => $definitions,
 			'resources' => array_values($deployment->findResources()),
 			'_links' => [
-				'details' => $this->uri->generate('../show-deployment', ['id' => $deployment->getId()])
+				'self' => $this->uri->generate('../show-deployment', ['id' => $deployment->getId()])
 			]
 		]));
 		
@@ -227,7 +230,7 @@ class EngineResource
 			'definitions' => $definitions,
 			'resources' => array_values($deployment->findResources()),
 			'_links' => [
-				'details' => $this->uri->generate('../show-deployment', ['id' => $deployment->getId()])
+				'self' => $this->uri->generate('../show-deployment', ['id' => $deployment->getId()])
 			]
 		]));
 		
@@ -241,15 +244,25 @@ class EngineResource
 	{
 		$definitions = $this->repositoryService->createProcessDefinitionQuery()->findAll();
 		
-		return new HalJsonEntity([
+		$json = new HalJsonEntity([
 			'count' => count($definitions),
 			'_links' => [
-				'detail' => $this->uri->generate('../show-definition')
+				'self' => $this->uri->generate('../list-definitions')
 			],
 			'_embedded' => [
 				'definitions' => $definitions
 			]
 		]);
+		
+		$json->decorate(function(ProcessDefinition $def) {
+			return [
+				'_links' => [
+					'self' => $this->uri->generate('../show-definition', ['id' => $def->getId()])
+				]
+			];	
+		});
+		
+		return $json;
 	}
 
 	/**
@@ -260,12 +273,20 @@ class EngineResource
 		$query = $this->repositoryService->createProcessDefinitionQuery()->processDefinitionId($id);
 		$def = $query->findOne();
 		
-		return new JsonEntity([
-			'definition' => $def,
-			'_links' => [
-				'start' => $this->uri->generate('../start-process', ['id' => $def->getId()])
-			]
-		]);
+		$json = new HalJsonEntity($def);
+		
+		$json->decorate(function(ProcessDefinition $def) {
+			return [
+				'_links' => [
+					'self' => $this->uri->generate('../show-definition', ['id' => $def->getId()]),
+					'bpmn:start' => $this->uri->generate('../start-process', [
+						'id' => $def->getId()
+					])->toArray(['title' => 'Start an instance of the process'])
+				]
+			];
+		});
+		
+		return $json;
 	}
 
 	/**
@@ -299,8 +320,8 @@ class EngineResource
 	{
 		return [
 			'self' => $this->uri->generate('../show-execution', ['id' => $execution->getId()]),
-			'message' => $this->uri->generate('../send-message', ['id' => $execution->getId()]),
-			'signal' => $this->uri->generate('../send-signal', ['id' => $execution->getId()])
+			'bpmn:message' => $this->uri->generate('../send-message', ['id' => $execution->getId()]),
+			'bpmn:signal' => $this->uri->generate('../send-signal', ['id' => $execution->getId()])
 		];
 	}
 
@@ -312,7 +333,9 @@ class EngineResource
 		return new JsonEntity([
 			'executions' => $this->runtimeService->createExecutionQuery()->findAll(),
 			'_links' => [
-				'signal' => $this->uri->generate('../broadcast-signal')
+				'bpmn:signal' => $this->uri->generate('../broadcast-signal')->toArray([
+					'title' => 'Broadcast a signal to all listening processes and executions'
+				])
 			]
 		]);
 	}
@@ -323,14 +346,21 @@ class EngineResource
 	public function showExecution($id)
 	{
 		$execution = $this->runtimeService->createExecutionQuery()->executionId($id)->findOne();
-
-		return new JsonEntity([
-			'execution' => $execution,
-			'variables' => $this->runtimeService->getExecutionVariables($execution->getId()),
-			'_links' => [
-				$this->createExecutionLinks($execution)
-			]
-		]);
+		
+		$json = new HalJsonEntity($execution);
+		
+		$json->decorate(function(Execution $execution) {
+			return [
+				'_links' => [
+					$this->createExecutionLinks($execution)
+				],
+				'_embedded' => [
+					'variables' => $this->runtimeService->getExecutionVariables($execution->getId())
+				]
+			];
+		});
+		
+		return $json;
 	}
 	
 	/**
@@ -345,7 +375,7 @@ class EngineResource
 		
 		return new JsonEntity([
 			'_links' => [
-				'execution' => $this->uri->generate('../show-execution', ['id' => $execution->getId()])
+				'bpmn:execution' => $this->uri->generate('../show-execution', ['id' => $execution->getId()])
 			]
 		]);
 	}
@@ -356,10 +386,25 @@ class EngineResource
 	public function listMessageSubscriptions($name)
 	{
 		$query = $this->runtimeService->createExecutionQuery()->messageEventSubscriptionName($name);
-
-		return new JsonEntity([
-			'executions' => $query->findAll()
+		$executions = $query->findAll();
+		
+		$json = new HalJsonEntity([
+			'count' => count($executions),
+			'_links' => [
+				'self' => $this->uri->generate('../list-message-subscriptions', ['name' => $name])
+ 			],
+			'_embedded' => [
+				'executions' => $executions
+			]
 		]);
+		
+		$json->decorate(function(Execution $execution) {
+			return [
+				'_links' => $this->createExecutionLinks($execution)
+			];
+		});
+		
+		return $json;
 	}
 
 	/**
@@ -368,10 +413,25 @@ class EngineResource
 	public function listSignalSubscriptions($name)
 	{
 		$query = $this->runtimeService->createExecutionQuery()->signalEventSubscriptionName($name);
-
-		return new JsonEntity([
-			'executions' => $query->findAll()
+		$executions = $query->findAll();
+		
+		$json = new HalJsonEntity([
+			'count' => count($executions),
+			'_links' => [
+				'self' => $this->uri->generate('../list-signal-subscriptions', ['name' => $name])
+			],
+			'_embedded' => [
+				'executions' => $executions
+			]
 		]);
+		
+		$json->decorate(function(Execution $execution) {
+			return [
+				'_links' => $this->createExecutionLinks($execution)
+			];
+		});
+		
+		return $json;
 	}
 	
 	/**
@@ -394,7 +454,7 @@ class EngineResource
 		
 		return new JsonEntity([
 			'_links' => [
-				'execution' => $this->uri->generate('../show-execution', ['id' => $execution->getId()])
+				'bpmn:execution' => $this->uri->generate('../show-execution', ['id' => $execution->getId()])
 			]
 		]);
 	}
@@ -404,9 +464,27 @@ class EngineResource
 	 */
 	public function listTasks()
 	{
-		return new JsonEntity([
-			'tasks' => $this->taskService->createTaskQuery()->findAll()
+		$tasks = $this->taskService->createTaskQuery()->findAll();
+		
+		$json = new HalJsonEntity([
+			'count' => count($tasks),
+			'_links' => [
+				'self' => $this->uri->generate('../list-tasks')
+			],
+			'_embedded' => [
+				'tasks' => $tasks
+			]
 		]);
+		
+		$json->decorate(function(TaskInterface $task) {
+			return [
+				'_links' => [
+					'self' => $this->uri->generate('../show-task', ['id' => $task->getId()])
+				]
+			];
+		});
+		
+		return $json;
 	}
 
 	/**
@@ -416,14 +494,21 @@ class EngineResource
 	{
 		$task = $this->taskService->createTaskQuery()->taskId($id)->findOne();
 		
-		return new JsonEntity([
-			'task' => $task,
-			'variables' => $this->runtimeService->getExecutionVariables($task->getExecutionId()),
-			'_links' => [
-				'complete' => $this->uri->generate('../complete-task', ['id' => $task->getId()]),
-				'execution' => $this->uri->generate('../show-execution', ['id' => $task->getExecutionId()])
-			]
-		]);
+		$json = new HalJsonEntity($task);
+		
+		$json->decorate(function(TaskInterface $task) {
+			return [
+				'_links' => [
+					'bpmn:complete' => $this->uri->generate('../complete-task', ['id' => $task->getId()]),
+					'bpmn:execution' => $this->uri->generate('../show-execution', ['id' => $task->getExecutionId()])
+				],
+				'_embedded' => [
+					'variables' => $this->runtimeService->getExecutionVariables($task->getId())
+				]
+			];
+		});
+		
+		return $json;
 	}
 
 	/**
