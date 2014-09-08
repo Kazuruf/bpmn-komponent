@@ -66,8 +66,10 @@ class EngineResource
 			'count' => count($deployments),
 			'_links' => [
 				'self' => $this->uri->generate('../list-deployments'),
-				'bpmn:deploy' => $this->uri->generate('../deploy-archive')->toArray(['name' => 'Deploy Archive']),
-				'bpmn:deploy' => $this->uri->generate('../deploy-file')->toArray(['name' => 'Deploy Process File'])
+				'bpmn:deploy' => [
+					$this->uri->generate('../deploy-archive')->toArray(['name' => 'Deploy Archive']),
+					$this->uri->generate('../deploy-file')->toArray(['name' => 'Deploy Process File'])
+				]
 			],
 			'_embedded' => [
 				'deployments' => $deployments
