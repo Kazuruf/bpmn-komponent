@@ -11,6 +11,7 @@
 
 namespace KoolKode\BPMN\Komponent\Api;
 
+use KoolKode\BPMN\Repository\Deployment;
 use KoolKode\BPMN\Repository\RepositoryService;
 use KoolKode\BPMN\Runtime\ExecutionInterface;
 use KoolKode\BPMN\Runtime\RuntimeService;
@@ -59,10 +60,9 @@ class EngineResource
 	{
 		$deployments = $this->repositoryService->createDeploymentQuery()->findAll();
 		
-		return new HalJsonEntity([
+		$json = new HalJsonEntity([
 			'count' => count($deployments),
 			'_links' => [
-				'details' => $this->uri->generate('../show-deployment'),
 				'deploy-archive' => $this->uri->generate('../deploy-archive'),
 				'deploy-file' => $this->uri->generate('../deploy-file')
 			],
@@ -70,6 +70,14 @@ class EngineResource
 				'deployments' => $deployments
 			]
 		]);
+		
+		$json->decorate(function(Deployment $deployment) {
+			yield '_links' => [
+				'self' => $this->uri->generate('../show-deployment', ['id' => $deployment->getId()])
+			];
+		});
+		
+		return $json;
 	}
 	
 	/**
@@ -177,10 +185,15 @@ class EngineResource
 	 */
 	public function listDefinitions()
 	{
-		return new JsonEntity([
-			'definitions' => $this->repositoryService->createProcessDefinitionQuery()->findAll(),
+		$definitions = $this->repositoryService->createProcessDefinitionQuery()->findAll();
+		
+		return new HalJsonEntity([
+			'count' => count($definitions),
 			'_links' => [
 				'detail' => $this->uri->generate('../show-definition')
+			],
+			'_embedded' => [
+				'definitions' => $definitions
 			]
 		]);
 	}

@@ -154,7 +154,7 @@ class MultiApiTest extends TestCase
 		$response = $this->httpRule->dispatch(new HttpRequest(new Uri('http://test.me/bpmn/definitions')));
 		$this->assertEquals(Http::CODE_OK, $response->getStatus());
 		$this->assertTrue($response->getMediaType()->is('application/json'));
-		$this->assertCount(0, json_decode($response->getContents(), true)['definitions']);
+		$this->assertCount(0, json_decode($response->getContents(), true)['_embedded']['definitions']);
 		
 		$builder = new UriBuilder('http://test.me/bpmn/deployments/' . ($archive ? 'archive' : 'file'));
 		$builder->param('name', 'Some Test Process');
