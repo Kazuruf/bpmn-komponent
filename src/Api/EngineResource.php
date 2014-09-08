@@ -77,7 +77,9 @@ class EngineResource
 		$json->decorate(function(Deployment $deployment) {
 			return [
 				'_links' => [
-					'self' => $this->uri->generate('../show-deployment', ['id' => $deployment->getId()])
+					'self' => $this->uri->generate('../show-deployment', [
+						'id' => $deployment->getId()
+					])->toArray(['title' => 'Show resource meta information'])
 				]
 			];
 		});
@@ -110,7 +112,7 @@ class EngineResource
 				'_links' => [
 					'self' => $this->uri->generate('../show-resource', [
 						'id' => $resource->getDeployment()->getId(),
-						'path' => $resource->getName()
+						'path' => explode('/', $resource->getName())
 					])
 				]
 			];
@@ -139,7 +141,7 @@ class EngineResource
 				'_links' => [
 					'self' => $this->uri->generate('../show-resource', [
 						'id' => $resources->getDeployment()->getId(),
-						'path' => $resources->getName()
+						'path' => explode('/', $resources->getName())
 					])
 				]
 			];
