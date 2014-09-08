@@ -11,11 +11,13 @@
 
 namespace KoolKode\BPMN\Komponent\Api;
 
+use KoolKode\BPMN\Repository\DeployedResource;
 use KoolKode\BPMN\Repository\Deployment;
 use KoolKode\BPMN\Repository\RepositoryService;
 use KoolKode\BPMN\Runtime\ExecutionInterface;
 use KoolKode\BPMN\Runtime\RuntimeService;
 use KoolKode\BPMN\Task\TaskService;
+use KoolKode\Http\Exception\NotFoundException;
 use KoolKode\Http\Http;
 use KoolKode\Http\HttpRequest;
 use KoolKode\Http\HttpResponse;
@@ -63,8 +65,9 @@ class EngineResource
 		$json = new HalJsonEntity([
 			'count' => count($deployments),
 			'_links' => [
-				'deploy-archive' => $this->uri->generate('../deploy-archive'),
-				'deploy-file' => $this->uri->generate('../deploy-file')
+				'self' => $this->uri->generate('../list-deployments'),
+				'bpmn:deploy-archive' => $this->uri->generate('../deploy-archive'),
+				'bpmn:deploy-file' => $this->uri->generate('../deploy-file')
 			],
 			'_embedded' => [
 				'deployments' => $deployments
@@ -72,8 +75,10 @@ class EngineResource
 		]);
 		
 		$json->decorate(function(Deployment $deployment) {
-			yield '_links' => [
-				'self' => $this->uri->generate('../show-deployment', ['id' => $deployment->getId()])
+			return [
+				'_links' => [
+					'self' => $this->uri->generate('../show-deployment', ['id' => $deployment->getId()])
+				]
 			];
 		});
 		
@@ -86,16 +91,61 @@ class EngineResource
 	public function showDeployment($id)
 	{
 		$deployment = $this->repositoryService->createDeploymentQuery()->deploymentId($id)->findOne();
-		$info = (array)$deployment->jsonSerialize();
 		
-		return new HalJsonEntity(array_merge($info, [
-			'_links' => [
-				'self' => $this->uri->generate('../show-deployment', ['id' => $id])
-			],
-			'_embedded' => [
-				'resources' => array_values($deployment->findResources())
-			]
-		]));
+		$json = new HalJsonEntity($deployment);
+		
+		$json->decorate(function(Deployment $deployment) {
+			return [
+				'_links' => [
+					'self' => $this->uri->generate('../show-deployment', ['id' => $deployment->getId()])
+				],
+				'_embedded' => [
+					'resources' => array_values($deployment->findResources())
+				]
+			];
+		});
+		
+		$json->decorate(function(DeployedResource $resource) use($id) {
+			return [
+				'_links' => [
+					'self' => $this->uri->generate('../show-resource', [
+						'id' => $resource->getDeployment()->getId(),
+						'path' => $resource->getName()
+					])
+				]
+			];
+		});
+		
+		return $json;
+	}
+	
+	/**
+	 * @Route("/deployments/{id}/resources{/path*}")
+	 */
+	public function showResource($id, $path)
+	{
+		$deployment = $this->repositoryService->createDeploymentQuery()->deploymentId($id)->findOne();
+		$resources = $deployment->findResources();
+		
+		if(empty($resources[$path]))
+		{
+			throw new NotFoundException();
+		}
+		
+		$json = new HalJsonEntity($resources[$path]);
+		
+		$json->decorate(function(DeployedResource $resources) {
+			return [
+				'_links' => [
+					'self' => $this->uri->generate('../show-resource', [
+						'id' => $resources->getDeployment()->getId(),
+						'path' => $resources->getName()
+					])
+				]
+			];
+		});
+		
+		return $json;
 	}
 	
 	/**
