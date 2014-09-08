@@ -57,12 +57,17 @@ class EngineResource
 	 */
 	public function listDeployments()
 	{
-		return new JsonEntity([
-			'deployments' => $this->repositoryService->createDeploymentQuery()->findAll(),
+		$deployments = $this->repositoryService->createDeploymentQuery()->findAll();
+		
+		return new HalJsonEntity([
+			'count' => count($deployments),
 			'_links' => [
 				'details' => $this->uri->generate('../show-deployment'),
 				'deploy-archive' => $this->uri->generate('../deploy-archive'),
 				'deploy-file' => $this->uri->generate('../deploy-file')
+			],
+			'_embedded' => [
+				'deployments' => $deployments
 			]
 		]);
 	}
@@ -74,9 +79,11 @@ class EngineResource
 	{
 		$deployment = $this->repositoryService->createDeploymentQuery()->deploymentId($id)->findOne();
 		
-		return new JsonEntity([
+		return new HalJsonEntity([
 			'deployment' => $deployment,
-			'resources' => array_values($deployment->findResources())
+			'_embedded' => [
+				'resources' => array_values($deployment->findResources())
+			]
 		]);
 	}
 	
