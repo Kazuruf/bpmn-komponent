@@ -78,13 +78,16 @@ class EngineResource
 	public function showDeployment($id)
 	{
 		$deployment = $this->repositoryService->createDeploymentQuery()->deploymentId($id)->findOne();
+		$info = (array)$deployment->jsonSerialize();
 		
-		return new HalJsonEntity([
-			'deployment' => $deployment,
+		return new HalJsonEntity(array_merge($info, [
+			'_links' => [
+				'self' => $this->uri->generate('../show-deployment', ['id' => $id])
+			],
 			'_embedded' => [
 				'resources' => array_values($deployment->findResources())
 			]
-		]);
+		]));
 	}
 	
 	/**
