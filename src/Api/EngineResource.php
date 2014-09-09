@@ -519,7 +519,7 @@ class EngineResource
 					'bpmn:execution' => $this->uri->generate('../show-execution', ['id' => $task->getExecutionId()])
 				],
 				'_embedded' => [
-					'variables' => $this->runtimeService->getExecutionVariables($task->getId())
+					'variables' => $this->runtimeService->getExecutionVariables($task->getExecutionId())
 				]
 			];
 		});

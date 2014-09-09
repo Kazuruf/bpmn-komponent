@@ -205,9 +205,8 @@ class MultiApiTest extends TestCase
 		$this->assertTrue($response->getMediaType()->is('application/json'));
 		
 		$payload = json_decode($response->getContents(), true);
-		$this->assertArrayHasKey('tasks', $payload);
-		$this->assertCount(1, $payload['tasks']);
-		$task = array_pop($payload['tasks']);
+		$this->assertCount(1, $payload['_embedded']['tasks']);
+		$task = array_pop($payload['_embedded']['tasks']);
 		$this->assertEquals($executionId, $task['executionId']);
 		$this->assertEquals('enterOrderData', $task['activityId']);
 		
@@ -243,9 +242,8 @@ class MultiApiTest extends TestCase
 		$this->assertTrue($response->getMediaType()->is('application/json'));
 		
 		$payload = json_decode($response->getContents(), true);
-		$this->assertArrayHasKey('tasks', $payload);
-		$this->assertCount(1, $payload['tasks']);
-		$task = array_pop($payload['tasks']);
+		$this->assertCount(1, $payload['_embedded']['tasks']);
+		$task = array_pop($payload['_embedded']['tasks']);
 		$this->assertEquals($executionId, $task['executionId']);
 		$this->assertEquals('verifyRegistration', $task['activityId']);
 		
@@ -265,7 +263,7 @@ class MultiApiTest extends TestCase
 			'processor' => ProcessorDelegateTask::class,
 			'handler' => ExampleTaskHandler::class,
 			'executionVerified' => true
-		], $payload['variables']);
+		], $payload['_embedded']['variables']);
 		
 		$request = new HttpRequest($builder->build(), Http::METHOD_POST);
 		$request->setEntity(new JsonEntity([
@@ -280,6 +278,6 @@ class MultiApiTest extends TestCase
 		$this->assertTrue($response->getMediaType()->is('application/json'));
 		
 		$payload = json_decode($response->getContents(), true);
-		$this->assertCount(0, $payload['executions']);
+		$this->assertCount(0, $payload['_embedded']['executions']);
 	}
 }
