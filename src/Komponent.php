@@ -23,7 +23,6 @@ use KoolKode\Context\Scope\ApplicationScoped;
 use KoolKode\Context\Scope\ScopeLoader;
 use KoolKode\Context\Scope\ScopeProviderInterface;
 use KoolKode\Context\Scope\Singleton;
-use KoolKode\K2\Console\Command;
 use KoolKode\K2\Komponent\AbstractKomponent;
 use KoolKode\BPMN\Delegate\DelegateExecutionInterface;
 
@@ -46,9 +45,6 @@ final class Komponent extends AbstractKomponent implements ScopeProviderInterfac
 	
 	public function build(ContainerBuilder $builder)
 	{
-		$builder->bind(SchemaCreateCommand::class)
-				->marked(new Command('bpmn', 'schema-create'));
-		
 		$builder->bind(DelegateTaskFactoryInterface::class)
 				->scoped(new Singleton())
 				->to(ContainerDelegateTaskFactory::class);

@@ -16,6 +16,7 @@ use KoolKode\BPMN\Komponent\BusinessProcessScopeManager;
 use KoolKode\BPMN\Komponent\Komponent;
 use KoolKode\Database\ConnectionInterface;
 use KoolKode\Database\ConnectionManagerInterface;
+use KoolKode\Database\Migration\MigrationManager;
 use KoolKode\K2\Komponent\KomponentLoader;
 use KoolKode\K2\Test\AbstractTestRule;
 use KoolKode\K2\Test\TestCase;
@@ -38,6 +39,8 @@ class ProcessRule extends AbstractTestRule
 	 */
 	protected $scope;
 	
+	protected $migration;
+	
 	public function registerKomponents(KomponentLoader $komponents)
 	{
 		$komponents->registerKomponent(new Komponent());
@@ -51,22 +54,14 @@ class ProcessRule extends AbstractTestRule
 	public function bootConnection(ConnectionManagerInterface $manager)
 	{
 		$this->conn = $manager->getConnection('test-bpmn');
+		$this->migration = new MigrationManager($this->conn);
 	}
 	
 	public function before(TestCase $test)
 	{
 		$ref = new \ReflectionClass(ProcessEngineInterface::class);
-		$file = sprintf('%s/ProcessEngine.%s.sql', dirname($ref->getFileName()), $this->conn->getDriverName());
 		
-		foreach((array)explode(';', file_get_contents($file)) as $chunk)
-		{
-			if('' == trim($chunk))
-			{
-				continue;
-			}
-			
-			$this->conn->execute($chunk);
-		}
+		$this->migration->migrateDirectoryUp(realpath(dirname($ref->getFileName()) . '/../../migration'));
 		
 		$this->engine = $this->container->get(ProcessEngineInterface::class);
 		$this->scope = $this->container->get(BusinessProcessScopeManager::class);
@@ -74,24 +69,7 @@ class ProcessRule extends AbstractTestRule
 	
 	public function after(TestCase $test)
 	{
-		static $tables = [
-			'#__process_subscription',
-			'#__event_subscription',
-			'#__user_task',
-			'#__execution_variables',
-			'#__execution',
-			'#__process_definition',
-			'#__resource',
-			'#__deployment'
-		];
-		
-		if($this->conn)
-		{
-			foreach($tables as $table)
-			{
-				$this->conn->execute("DROP TABLE IF EXISTS `$table`");
-			}
-		}
+		$this->migration->flushDatabase();
 	}
 	
 	public function getProcessEngine()
