@@ -11,6 +11,7 @@
 
 namespace KoolKode\BPMN\Komponent;
 
+use KoolKode\BPMN\Delegate\DelegateExecutionInterface;
 use KoolKode\BPMN\Delegate\DelegateTaskFactoryInterface;
 use KoolKode\BPMN\Engine\ProcessEngine;
 use KoolKode\BPMN\Engine\ProcessEngineInterface;
@@ -23,10 +24,11 @@ use KoolKode\Context\Scope\ApplicationScoped;
 use KoolKode\Context\Scope\ScopeLoader;
 use KoolKode\Context\Scope\ScopeProviderInterface;
 use KoolKode\Context\Scope\Singleton;
+use KoolKode\Database\Migration\MigrationConfig;
+use KoolKode\K2\Database\MigrationProviderInterface;
 use KoolKode\K2\Komponent\AbstractKomponent;
-use KoolKode\BPMN\Delegate\DelegateExecutionInterface;
 
-final class Komponent extends AbstractKomponent implements ScopeProviderInterface
+final class Komponent extends AbstractKomponent implements ScopeProviderInterface, MigrationProviderInterface
 {
 	public function getKey()
 	{
@@ -41,6 +43,13 @@ final class Komponent extends AbstractKomponent implements ScopeProviderInterfac
 	public function loadScopes(ScopeLoader $loader)
 	{
 		$loader->registerScope(new BusinessProcessScopeManager());
+	}
+	
+	public function loadMigrations(MigrationConfig $config)
+	{
+		$ref = new \ReflectionClass(ProcessEngineInterface::class);
+		
+		$config->loadMigrationsFromDirectory(realpath(dirname($ref->getFileName()) . '/../../migration'));
 	}
 	
 	public function build(ContainerBuilder $builder)
