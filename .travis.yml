@@ -6,14 +6,23 @@ php:
   - hhvm
   - hhvm-nightly
 
+env:
+  - 'DEPS=""'
+  - 'DEPS="--prefer-stable --prefer-lowest"'
+
 before_install:
   - 'composer selfupdate --no-interaction'
 
 install:
-  - 'composer install --no-interaction --dev --prefer-source'
-  
+  - 'composer update --no-interaction --dev --prefer-source $DEPS'
+
 script:
-  - './vendor/bin/phpunit -c "./test/phpunit.xml" --coverage-text'
+  - './vendor/bin/phpunit -c "./test/phpunit.xml"'
 
 notifications:
   email: false
+
+matrix:
+  allow_failures:
+    - php: hhvm
+    - php: hhvm-nightly

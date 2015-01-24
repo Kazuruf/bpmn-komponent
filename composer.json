@@ -16,12 +16,12 @@
 	],
 	"require" : {
 		"php" : ">=5.5.0",
-		"koolkode/bpmn" : "dev-master",
+		"koolkode/bpmn" : "~0.1",
 		"koolkode/k2" : "dev-master",
 		"koolkode/http-komponent" : "dev-master"
 	},
 	"require-dev" : {
-		"phpunit/phpunit" : "4.*"
+		"phpunit/phpunit" : "~4.4@stable"
 	},
 	"autoload" : {
 		"psr-4" : {
