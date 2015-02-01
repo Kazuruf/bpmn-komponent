@@ -27,8 +27,8 @@ use KoolKode\Http\Komponent\Rest\RestResource;
 use KoolKode\Http\Komponent\Test\HttpRule;
 use KoolKode\Http\Uri;
 use KoolKode\Http\UriBuilder;
+use KoolKode\Http\Komponent\Rest\JsonEntity;
 use KoolKode\K2\Test\TestCase;
-use KoolKode\Rest\JsonEntity;
 
 class MultiApiTest extends TestCase
 {
@@ -192,7 +192,7 @@ class MultiApiTest extends TestCase
 		$this->assertEquals(Http::CODE_CREATED, $response->getStatus());
 		$this->assertTrue($response->getMediaType()->is('application/json'));
 		
-		$location = $response->getHeader('Location');
+		$response->getHeader('Location');
 		$payload = json_decode($response->getContents(), true);
 		$executionId = $payload['execution']['id'];
 		

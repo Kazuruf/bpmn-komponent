@@ -13,7 +13,7 @@ namespace KoolKode\BPMN\Komponent\Api;
 
 use KoolKode\Http\Header\ContentTypeHeader;
 use KoolKode\Http\HttpMessage;
-use KoolKode\Rest\JsonEntity;
+use KoolKode\Http\Komponent\Rest\JsonEntity;
 
 class HalJsonEntity extends JsonEntity
 {

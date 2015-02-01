@@ -24,9 +24,9 @@ use KoolKode\Http\Exception\NotFoundException;
 use KoolKode\Http\Http;
 use KoolKode\Http\HttpRequest;
 use KoolKode\Http\HttpResponse;
-use KoolKode\Rest\JsonEntity;
-use KoolKode\Rest\Route;
-use KoolKode\Router\UriGeneratorInterface;
+use KoolKode\Http\Komponent\Rest\JsonEntity;
+use KoolKode\Http\Komponent\Rest\Route;
+use KoolKode\Http\Komponent\Router\UriGeneratorInterface;
 
 class EngineResource
 {
