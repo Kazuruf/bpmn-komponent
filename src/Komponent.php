@@ -26,9 +26,17 @@ use KoolKode\Context\Scope\ScopeProviderInterface;
 use KoolKode\Context\Scope\Singleton;
 use KoolKode\Database\Migration\MigrationConfig;
 use KoolKode\K2\Database\MigrationProviderInterface;
+use KoolKode\K2\IncludeCompiler;
+use KoolKode\K2\IncludeEnumerationSource;
 use KoolKode\K2\Komponent\AbstractKomponent;
+use KoolKode\K2\MergeSourceProviderInterface;
 
-final class Komponent extends AbstractKomponent implements ScopeProviderInterface, MigrationProviderInterface
+/**
+ * Integrates BPMN 2.0 process applications with K2.
+ * 
+ * @author Martin Schröder
+ */
+final class Komponent extends AbstractKomponent implements ScopeProviderInterface, MigrationProviderInterface, MergeSourceProviderInterface
 {
 	public function getKey()
 	{
@@ -80,5 +88,16 @@ final class Komponent extends AbstractKomponent implements ScopeProviderInterfac
 		$builder->bind(TaskService::class)
 				->scoped(new ApplicationScoped())
 				->to(ProcessEngineInterface::class, 'getTaskService');
+	}
+	
+	public function loadMergeSources(IncludeCompiler $compiler, $vendor)
+	{
+		$compiler->addSource(new IncludeEnumerationSource(__DIR__, [
+			'BusinessProcessScopeManager'
+		]));
+		
+		$compiler->addSource(new IncludeEnumerationSource($vendor . '/koolkode/bpmns/src/Delegate', [
+			'DelegateExecutionInterface'
+		]));
 	}
 }
