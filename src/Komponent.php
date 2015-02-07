@@ -96,7 +96,7 @@ final class Komponent extends AbstractKomponent implements ScopeProviderInterfac
 			'BusinessProcessScopeManager'
 		]));
 		
-		$compiler->addSource(new IncludeEnumerationSource($vendor . '/koolkode/bpmns/src/Delegate', [
+		$compiler->addSource(new IncludeEnumerationSource($vendor . '/koolkode/bpmn/src/Delegate', [
 			'DelegateExecutionInterface'
 		]));
 	}
