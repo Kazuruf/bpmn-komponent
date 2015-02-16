@@ -83,7 +83,6 @@ class ProcessEngineFactory
 			$executor = new JobExecutor($engine, $this->scheduler);
 			
 			$this->container->eachMarked(function(JobHandler $handler, BindingInterface $binding) use($executor) {
-				print_r($binding);
 				$executor->registerJobHandler($this->container->getBound($binding));
 			});
 			
