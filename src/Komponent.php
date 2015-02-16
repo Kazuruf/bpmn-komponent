@@ -15,6 +15,8 @@ use KoolKode\BPMN\Delegate\DelegateExecutionInterface;
 use KoolKode\BPMN\Delegate\DelegateTaskFactoryInterface;
 use KoolKode\BPMN\Engine\ProcessEngine;
 use KoolKode\BPMN\Engine\ProcessEngineInterface;
+use KoolKode\BPMN\Job\Handler\AsyncCommandHandler;
+use KoolKode\BPMN\ManagementService;
 use KoolKode\BPMN\Repository\RepositoryService;
 use KoolKode\BPMN\Runtime\RuntimeService;
 use KoolKode\BPMN\Task\TaskService;
@@ -88,6 +90,13 @@ final class Komponent extends AbstractKomponent implements ScopeProviderInterfac
 		$builder->bind(TaskService::class)
 				->scoped(new ApplicationScoped())
 				->to(ProcessEngineInterface::class, 'getTaskService');
+		
+		$builder->bind(ManagementService::class)
+				->scoped(new ApplicationScoped())
+				->to(ProcessEngineInterface::class, 'getManagementService');
+		
+		$builder->bind(AsyncCommandHandler::class)
+				->marked(new JobHandler());
 	}
 	
 	public function loadMergeSources(IncludeCompiler $compiler, $vendor)

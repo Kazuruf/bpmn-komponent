@@ -14,6 +14,8 @@ namespace KoolKode\BPMN\Komponent;
 use KoolKode\BPMN\Delegate\DelegateTaskFactoryInterface;
 use KoolKode\BPMN\Engine\ProcessEngine;
 use KoolKode\BPMN\Delegate\Event\TaskExecutedEvent;
+use KoolKode\BPMN\Job\Executor\JobExecutor;
+use KoolKode\BPMN\Job\Scheduler\JobSchedulerInterface;
 use KoolKode\Config\Configuration;
 use KoolKode\Context\ContainerInterface;
 use KoolKode\Context\Bind\BindingInterface;
@@ -34,6 +36,8 @@ class ProcessEngineFactory
 	protected $taskFactory;
 	
 	protected $scope;
+	
+	protected $scheduler;
 	
 	public function __construct(ContainerInterface $container, ExpressionContextFactoryInterface $factory)
 	{
@@ -56,6 +60,11 @@ class ProcessEngineFactory
 		$this->scope = $scope;
 	}
 	
+	public function setJobScheduler(JobSchedulerInterface $scheduler = NULL)
+	{
+		$this->scheduler = $scheduler;
+	}
+	
 	public function createProcessEngine(Configuration $config, LoggerInterface $logger = NULL)
 	{
 		$conn = $this->connectionManager->getConnection($config->getString('connection', 'default'));
@@ -67,6 +76,19 @@ class ProcessEngineFactory
 		$engine->setDelegateTaskFactory($this->taskFactory);
 		$engine->registerExecutionInterceptor(new ScopeExecutionInterceptor($this->scope));
 		$engine->setLogger($logger);
+		
+		// Load job executor when a scheduler is available and register all job handlers using DI marker.
+		if($this->scheduler !== NULL)
+		{
+			$executor = new JobExecutor($engine, $this->scheduler);
+			
+			$this->container->eachMarked(function(JobHandler $handler, BindingInterface $binding) use($executor) {
+				print_r($binding);
+				$executor->registerJobHandler($this->container->getBound($binding));
+			});
+			
+			$engine->setJobExecutor($executor);
+		}
 		
 		$dispatcher->connect(function(AbstractProcessEvent $event) {
 			$this->scope->enterContext($event->execution);
