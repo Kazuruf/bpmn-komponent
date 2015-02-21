@@ -97,19 +97,16 @@ class MultiApiTest extends TestCase
 		$this->assertEquals(0, $this->runtimeService->createExecutionQuery()->count());
 		
 		$process = $this->runtimeService->startProcessInstanceByKey('main');
-		$this->assertEquals(1, $this->runtimeService->createExecutionQuery()->count());
 		
 		$task = $this->taskService->createTaskQuery()->findOne();
 		$this->assertTrue($task instanceof TaskInterface);
-		$this->assertEquals('enterOrderData', $task->getActivityId());
-		$this->assertEquals(1, $this->runtimeService->createExecutionQuery()->count());
+		$this->assertEquals('enterOrderData', $task->getDefinitionKey());
 		$this->assertEquals(1, $this->taskService->createTaskQuery()->count());
 		
 		$this->taskService->complete($task->getId(), [
 			'id' => $id,
 			'title' => $title
 		]);
-		$this->assertEquals(1, $this->runtimeService->createExecutionQuery()->count());
 		$this->assertEquals(0, $this->taskService->createTaskQuery()->count());
 		
 		$execution = $this->runtimeService->createExecutionQuery()->messageEventSubscriptionName('OrderRegistrationReceived')->findOne();
@@ -121,8 +118,7 @@ class MultiApiTest extends TestCase
 		
 		$task = $this->taskService->createTaskQuery()->findOne();
 		$this->assertTrue($task instanceof TaskInterface);
-		$this->assertEquals('verifyRegistration', $task->getActivityId());
-		$this->assertEquals(1, $this->runtimeService->createExecutionQuery()->count());
+		$this->assertEquals('verifyRegistration', $task->getDefinitionKey());
 		$this->assertEquals(1, $this->taskService->createTaskQuery()->count());
 		
 		$this->assertEquals([
@@ -207,8 +203,7 @@ class MultiApiTest extends TestCase
 		$payload = json_decode($response->getContents(), true);
 		$this->assertCount(1, $payload['_embedded']['tasks']);
 		$task = array_pop($payload['_embedded']['tasks']);
-		$this->assertEquals($executionId, $task['executionId']);
-		$this->assertEquals('enterOrderData', $task['activityId']);
+		$this->assertEquals('enterOrderData', $task['definitionKey']);
 		
 		$builder = new UriBuilder('http://test.me/bpmn/tasks/{id}');
 		$builder->pathParam('id', $task['id']);
@@ -222,7 +217,6 @@ class MultiApiTest extends TestCase
 		$this->assertTrue($response->getMediaType()->is('application/json'));
 		
 		$payload = json_decode($response->getContents(), true);
-		$this->assertEquals($executionId, $payload['task']['executionId']);
 		
 		$builder = new UriBuilder('http://test.me/bpmn/executions/{id}/message/{message}');
 		$builder->pathParam('id', $executionId);
@@ -244,8 +238,7 @@ class MultiApiTest extends TestCase
 		$payload = json_decode($response->getContents(), true);
 		$this->assertCount(1, $payload['_embedded']['tasks']);
 		$task = array_pop($payload['_embedded']['tasks']);
-		$this->assertEquals($executionId, $task['executionId']);
-		$this->assertEquals('verifyRegistration', $task['activityId']);
+		$this->assertEquals('verifyRegistration', $task['definitionKey']);
 		
 		$builder = new UriBuilder('http://test.me/bpmn/tasks/{id}');
 		$builder->pathParam('id', $task['id']);

@@ -12,7 +12,6 @@
 namespace KoolKode\BPMN\Komponent;
 
 use KoolKode\BPMN\Delegate\DelegateExecutionInterface;
-use KoolKode\Context\Scope\Scope;
 
 class ExampleTaskHandler implements TaskHandlerInterface
 {
@@ -25,10 +24,7 @@ class ExampleTaskHandler implements TaskHandlerInterface
 	
 	public function executeTask(DelegateExecutionInterface $execution)
 	{
-		$contextual = Scope::unwrap($this->execution);
-		
-		// Execution are equal (same properties / values) but are not identical (different object instances).
-		$verified = ($contextual == $execution) && ($contextual !== $execution);
+		$verified = $this->execution->getProcessInstanceId() == $execution->getProcessInstanceId();
 		
 		$execution->setVariable('handler', get_class($this));
 		$execution->setVariable('executionVerified', $verified);

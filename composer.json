@@ -16,7 +16,7 @@
 	],
 	"require" : {
 		"php" : ">=5.5.0",
-		"koolkode/bpmn" : "~0.1",
+		"koolkode/bpmn" : "^0.1.2",
 		"koolkode/k2" : "dev-master",
 		"koolkode/http-komponent" : "dev-master"
 	},

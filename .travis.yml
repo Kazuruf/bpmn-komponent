@@ -14,7 +14,7 @@ before_install:
   - 'composer selfupdate --no-interaction'
 
 install:
-  - 'composer update --no-interaction --dev --prefer-source $DEPS'
+  - 'composer update --no-interaction --prefer-source $DEPS'
 
 script:
   - './vendor/bin/phpunit -c "./test/phpunit.xml"'
