@@ -281,7 +281,10 @@ class EngineResource
 					'self' => $this->uri->generate('../show-definition', ['id' => $def->getId()]),
 					'bpmn:start' => $this->uri->generate('../start-process', [
 						'id' => $def->getId()
-					])->toArray(['title' => 'Start an instance of the process'])
+					])->toArray(['title' => 'Start an instance of the process']),
+					'bpmn:diagram' => $this->uri->generate('../show-process-diagram', [
+						'id' => $def->getId()
+					])->toArray(['title' => 'Show BPMN 2.0 process diagram'])
 				]
 			];
 		});
@@ -289,6 +292,46 @@ class EngineResource
 		return $json;
 	}
 
+	/**
+	 * @Route("GET /definitions/{id}/diagram")
+	 */
+	public function showProcessDiagram($id)
+	{
+		$def = $this->repositoryService->createProcessDefinitionQuery()->processDefinitionId($id)->findOne();
+		
+		$deploymentId = $def->getDeploymentId();
+		$resourceId = $def->getResourceId();
+		
+		if($resourceId === NULL)
+		{
+			throw new NotFoundException();
+		}
+		
+		$deployment = $this->repositoryService->createDeploymentQuery()->deploymentId($deploymentId)->findOne();
+		$diagram = NULL;
+		
+		foreach($deployment->findResources() as $resource)
+		{
+			if($resource->getId() == $resourceId)
+			{
+				$diagram = $resource;
+				
+				break;
+			}
+		}
+		
+		if($diagram === NULL)
+		{
+			throw new NotFoundException();
+		}
+		
+		$response = new HttpResponse();
+		$response->setHeader('Content-Type', 'application/xml');
+		$response->setEntity((string)$resource->getContents());
+		
+		return $response;
+	}
+	
 	/**
 	 * @Route("POST /definitions/{id}")
 	 */

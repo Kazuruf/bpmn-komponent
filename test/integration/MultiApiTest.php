@@ -13,6 +13,7 @@ namespace KoolKode\BPMN\Komponent;
 
 use KoolKode\BPMN\Komponent\Api\EngineResource;
 use KoolKode\BPMN\Komponent\Test\ProcessRule;
+use KoolKode\BPMN\Repository\DeployedResource;
 use KoolKode\BPMN\Repository\RepositoryService;
 use KoolKode\BPMN\Runtime\RuntimeService;
 use KoolKode\BPMN\Task\TaskInterface;
@@ -72,6 +73,11 @@ class MultiApiTest extends TestCase
 				->marked(new TaskHandler('transmitOrder', 'main'));
 	}
 	
+	protected function getProcessDiagramXml()
+	{
+		return file_get_contents(__DIR__ . '/MultiApiTest/Process/MultiApiTest.bpmn');
+	}
+	
 	public function provideOrders()
 	{
 		return [
@@ -93,6 +99,22 @@ class MultiApiTest extends TestCase
 		{
 			$this->processRule->deployArchive('MultiApiTest.zip');
 		}
+		
+		$def = $this->repositoryService->createProcessDefinitionQuery()->findOne();
+		$deployment = $this->repositoryService->createDeploymentQuery()->deploymentId($def->getDeploymentId())->findOne();
+		
+		$diagram = NULL;
+		foreach($deployment->findResources() as $resource)
+		{
+			if($resource->getId() == $def->getResourceId())
+			{
+				$diagram = $resource;
+				break;
+			}
+		}
+		
+		$this->assertTrue($diagram instanceof DeployedResource);
+		$this->assertEquals($this->getProcessDiagramXml(), $diagram->getContents());
 		
 		$this->assertEquals(0, $this->runtimeService->createExecutionQuery()->count());
 		
@@ -169,6 +191,12 @@ class MultiApiTest extends TestCase
 		$definition = array_pop($payload['definitions']);
 		$this->assertTrue(is_array($definition));
 		$this->assertArrayHasKey('id', $definition);
+		
+		$response = $this->httpRule->dispatchUrl('bpmn/definitions/{id}/diagram', [
+			'id' => $definition['id']
+		]);
+		$this->assertEquals(Http::CODE_OK, $response->getStatus());
+		$this->assertEquals($this->getProcessDiagramXml(), $response->getContents());
 		
 		$builder = new UriBuilder('http://test.me/bpmn/definitions/{id}');
 		$builder->pathParam('id', $definition['id']);
