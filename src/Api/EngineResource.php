@@ -255,7 +255,10 @@ class EngineResource
 		$json = new HalJsonEntity([
 			'count' => count($definitions),
 			'_links' => [
-				'self' => $this->uri->generate('../list-definitions')
+				'self' => $this->uri->generate('../list-definitions'),
+				'bpmn:message' => $this->uri->generate('../start-process-by-message')->toArray([
+					'title' => 'Start a process instance using a message'
+				])
 			],
 			'_embedded' => [
 				'definitions' => $definitions
@@ -364,6 +367,32 @@ class EngineResource
 			]
 		]));
 
+		return $response;
+	}
+	
+	/**
+	 * @Route("POST /definitions/message/{message}")
+	 */
+	public function startProcessByMessage($message, JsonEntity $input)
+	{
+		$input = $input->toArray();
+		$businessKey = array_key_exists('businessKey', $input) ? (string)$input['businessKey'] : NULL;
+		$vars = array_key_exists('variables', $input) ? $input['variables'] : [];
+		
+		$execution = $this->runtimeService->startProcessInstanceByMessage($message, $businessKey, $vars);
+	
+		$response = new HttpResponse(Http::CODE_CREATED);
+		$response->setHeader('Location', $this->uri->generate('../show-execution', [
+				'id' => $execution->getId()
+		]));
+		$response->setEntity(new JsonEntity([
+				'execution' => $execution,
+				'variables' => $this->runtimeService->getExecutionVariables($execution->getId()),
+				'_links' => [
+					$this->createExecutionLinks($execution)
+				]
+		]));
+	
 		return $response;
 	}
 	
