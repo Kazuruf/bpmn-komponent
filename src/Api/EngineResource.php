@@ -436,7 +436,7 @@ class EngineResource
 	public function listExecutionActivities($id)
 	{
 		$this->runtimeService->createExecutionQuery()->executionId($id)->findOne();
-		$activities = $this->historyService->createHistoricActivityInstanceQuery()->executionId($id)->canceled(false)->orderByEndedAt()->findAll();
+		$activities = $this->historyService->createHistoricActivityInstanceQuery()->executionId($id)->canceled(false)->orderByStartedAt()->findAll();
 	
 		$json = new HalJsonEntity([
 			'count' => count($activities),
