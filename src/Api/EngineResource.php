@@ -28,7 +28,6 @@ use KoolKode\Http\HttpResponse;
 use KoolKode\Http\Komponent\Rest\JsonEntity;
 use KoolKode\Http\Komponent\Rest\Route;
 use KoolKode\Http\Komponent\Router\UriGeneratorInterface;
-use KoolKode\BPMN\History\HistoricActivityInstance;
 
 class EngineResource
 {
@@ -437,7 +436,7 @@ class EngineResource
 	public function listExecutionActivities($id)
 	{
 		$this->runtimeService->createExecutionQuery()->executionId($id)->findOne();
-		$activities = $this->historyService->createHistoricActivityInstanceQuery()->executionId($id)->completed(true)->orderByEndedAt()->findAll();
+		$activities = $this->historyService->createHistoricActivityInstanceQuery()->executionId($id)->canceled(false)->orderByEndedAt()->findAll();
 	
 		$json = new HalJsonEntity([
 			'count' => count($activities),
