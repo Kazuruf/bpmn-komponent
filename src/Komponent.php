@@ -15,6 +15,7 @@ use KoolKode\BPMN\Delegate\DelegateExecutionInterface;
 use KoolKode\BPMN\Delegate\DelegateTaskFactoryInterface;
 use KoolKode\BPMN\Engine\ProcessEngine;
 use KoolKode\BPMN\Engine\ProcessEngineInterface;
+use KoolKode\BPMN\History\HistoryService;
 use KoolKode\BPMN\Job\Handler\AsyncCommandHandler;
 use KoolKode\BPMN\ManagementService;
 use KoolKode\BPMN\Repository\RepositoryService;
@@ -90,6 +91,10 @@ final class Komponent extends AbstractKomponent implements ScopeProviderInterfac
 		$builder->bind(TaskService::class)
 				->scoped(new ApplicationScoped())
 				->to(ProcessEngineInterface::class, 'getTaskService');
+		
+		$builder->bind(HistoryService::class)
+				->scoped(new ApplicationScoped())
+				->to(ProcessEngineInterface::class, 'getHistoryService');
 		
 		$builder->bind(ManagementService::class)
 				->scoped(new ApplicationScoped())

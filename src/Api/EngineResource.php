@@ -11,6 +11,7 @@
 
 namespace KoolKode\BPMN\Komponent\Api;
 
+use KoolKode\BPMN\History\HistoryService;
 use KoolKode\BPMN\Repository\DeployedResource;
 use KoolKode\BPMN\Repository\Deployment;
 use KoolKode\BPMN\Repository\ProcessDefinition;
@@ -27,6 +28,7 @@ use KoolKode\Http\HttpResponse;
 use KoolKode\Http\Komponent\Rest\JsonEntity;
 use KoolKode\Http\Komponent\Rest\Route;
 use KoolKode\Http\Komponent\Router\UriGeneratorInterface;
+use KoolKode\BPMN\History\HistoricActivityInstance;
 
 class EngineResource
 {
@@ -56,6 +58,13 @@ class EngineResource
 	public function setTaskService(TaskService $taskService)
 	{
 		$this->taskService = $taskService;
+	}
+	
+	protected $historyService;
+	
+	public function setHistoryService(HistoryService $historyService)
+	{
+		$this->historyService = $historyService;
 	}
 	
 	/**
@@ -419,6 +428,27 @@ class EngineResource
 			];
 		});
 		
+		return $json;
+	}
+	
+	/**
+	 * @Route("GET /executions/{id}/activities")
+	 */
+	public function listExecutionActivities($id)
+	{
+		$this->runtimeService->createExecutionQuery()->executionId($id)->findOne();
+		$activities = $this->historyService->createHistoricActivityInstanceQuery()->executionId($id)->completed(true)->orderByEndedAt()->findAll();
+	
+		$json = new HalJsonEntity([
+			'count' => count($activities),
+			'_links' => [
+				'self' => $this->uri->generate('../list-execution-activities')
+			],
+			'_embedded' => [
+				'activities' => $activities
+			]
+		]);
+	
 		return $json;
 	}
 	
