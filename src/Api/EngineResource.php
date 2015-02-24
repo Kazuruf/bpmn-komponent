@@ -28,6 +28,7 @@ use KoolKode\Http\HttpResponse;
 use KoolKode\Http\Komponent\Rest\JsonEntity;
 use KoolKode\Http\Komponent\Rest\Route;
 use KoolKode\Http\Komponent\Router\UriGeneratorInterface;
+use KoolKode\Util\UUID;
 
 class EngineResource
 {
@@ -363,7 +364,7 @@ class EngineResource
 			'execution' => $execution,
 			'variables' => $this->runtimeService->getExecutionVariables($execution->getId()),
 			'_links' => [
-				$this->createExecutionLinks($execution)
+				$this->createExecutionLinks($execution->getId())
 			]
 		]));
 
@@ -389,19 +390,19 @@ class EngineResource
 				'execution' => $execution,
 				'variables' => $this->runtimeService->getExecutionVariables($execution->getId()),
 				'_links' => [
-					$this->createExecutionLinks($execution)
+					$this->createExecutionLinks($execution->getId())
 				]
 		]));
 	
 		return $response;
 	}
 	
-	protected function createExecutionLinks(ExecutionInterface $execution)
+	protected function createExecutionLinks(UUID $executionId)
 	{
 		return [
-			'self' => $this->uri->generate('../show-execution', ['id' => $execution->getId()]),
-			'bpmn:message' => $this->uri->generate('../send-message', ['id' => $execution->getId()]),
-			'bpmn:signal' => $this->uri->generate('../send-signal', ['id' => $execution->getId()])
+			'self' => $this->uri->generate('../show-execution', ['id' => $executionId]),
+			'bpmn:message' => $this->uri->generate('../send-message', ['id' => $executionId]),
+			'bpmn:signal' => $this->uri->generate('../send-signal', ['id' => $executionId])
 		];
 	}
 
@@ -448,7 +449,7 @@ class EngineResource
 		$json->decorate(function(Execution $execution) {
 			return [
 				'_links' => [
-					$this->createExecutionLinks($execution)
+					$this->createExecutionLinks($execution->getId())
 				],
 				'_embedded' => [
 					'variables' => $this->runtimeService->getExecutionVariables($execution->getId())
@@ -460,17 +461,21 @@ class EngineResource
 	}
 	
 	/**
-	 * @Route("GET /executions/{id}/activities")
+	 * @Route("GET /process/instance/{id}/activities")
 	 */
-	public function listExecutionActivities($id)
+	public function listProcessActivities($id)
 	{
-		$this->runtimeService->createExecutionQuery()->executionId($id)->findOne();
-		$activities = $this->historyService->createHistoricActivityInstanceQuery()->executionId($id)->canceled(false)->orderByStartedAt()->findAll();
+		$activities = $this->historyService->createHistoricActivityInstanceQuery()->processInstanceId($id)->canceled(false)->orderByStartedAt()->findAll();
 	
+		if(empty($activities))
+		{
+			throw new NotFoundException();
+		}
+		
 		$json = new HalJsonEntity([
 			'count' => count($activities),
 			'_links' => [
-				'self' => $this->uri->generate('../list-execution-activities')
+				'self' => $this->uri->generate('../list-process-activities')
 			],
 			'_embedded' => [
 				'activities' => $activities
@@ -517,7 +522,7 @@ class EngineResource
 		
 		$json->decorate(function(Execution $execution) {
 			return [
-				'_links' => $this->createExecutionLinks($execution)
+				'_links' => $this->createExecutionLinks($execution->getId())
 			];
 		});
 		
@@ -544,7 +549,7 @@ class EngineResource
 		
 		$json->decorate(function(Execution $execution) {
 			return [
-				'_links' => $this->createExecutionLinks($execution)
+				'_links' => $this->createExecutionLinks($execution->getId())
 			];
 		});
 		
