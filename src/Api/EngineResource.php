@@ -25,6 +25,7 @@ use KoolKode\Http\Exception\NotFoundException;
 use KoolKode\Http\Http;
 use KoolKode\Http\HttpRequest;
 use KoolKode\Http\HttpResponse;
+use KoolKode\Http\Komponent\Resource\ResourcePublisherInterface;
 use KoolKode\Http\Komponent\Rest\JsonEntity;
 use KoolKode\Http\Komponent\Rest\Route;
 use KoolKode\Http\Komponent\Router\UriGeneratorInterface;
@@ -65,6 +66,13 @@ class EngineResource
 	public function setHistoryService(HistoryService $historyService)
 	{
 		$this->historyService = $historyService;
+	}
+	
+	protected $resourcePublisher;
+	
+	public function setResourcePublisher(ResourcePublisherInterface $resourcePublisher)
+	{
+		$this->resourcePublisher = $resourcePublisher;
 	}
 	
 	/**
@@ -483,6 +491,32 @@ class EngineResource
 		]);
 	
 		return $json;
+	}
+	
+	/**
+	 * @Route("GET /process/instance/{id}/activities.html")
+	 */
+	public function renderProcessActivitiesHtml($id)
+	{
+		$process = $this->historyService->createHistoricProcessInstanceQuery()->processInstanceId($id)->findOne();
+		$definition = $this->repositoryService->createProcessDefinitionQuery()->processDefinitionId($process->getProcessDefinitionId())->findOne();
+		$deployment = $this->repositoryService->createDeploymentQuery()->deploymentId($definition->getDeploymentId())->findOne();
+		$xml = $deployment->findResourceById($definition->getResourceId())->getContents();
+		 
+		$activities = $this->historyService->createHistoricActivityInstanceQuery()->processInstanceId($id)->canceled(false)->orderByStartedAt()->findAll();
+	
+		if(empty($activities))
+		{
+			throw new NotFoundException();
+		}
+		
+		$view = new \KoolKode\View\ViewModel('k2://koolkode/bpmn-komponent/api/activities.phtml', [
+			'pub' => $this->resourcePublisher,
+			'xml' => $xml,
+			'activities' => $activities
+		]);
+		
+		return $view;
 	}
 	
 	/**

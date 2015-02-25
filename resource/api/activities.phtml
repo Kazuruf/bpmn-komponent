@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <style type="text/css">
+    html, body, #canvas {
+      height: 100%;
+      padding: 0;
+    }
+
+    .diagram-note {
+      background-color: rgba(66, 180, 21, 0.9);
+      color: White;
+      border-radius: 5pt;
+      font-family: Arial;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 5px 10px;
+      min-height: 16px;
+      text-align: center;
+    }
+
+    .needs-discussion:not(.djs-connection) .djs-visual > :nth-child(1) {
+      stroke: rgba(66, 180, 21, 0.7) !important; /* color elements as red */
+    }
+  </style>
+
+  <title>bpmn-js seed</title>
+</head>
+<body>
+  <!-- element to draw bpmn diagram in -->
+  <div id="canvas"></div>
+
+  <!-- scripts -->
+
+  <!-- dependencies -->
+  <script src="<?php echo $pub->getResourceUri('k2://koolkode/bpmn-komponent/public/api/jquery.min.js'); ?>"></script>
+  <script src="<?php echo $pub->getResourceUri('k2://koolkode/bpmn-komponent/public/api/jquery.mousewheel.min.js'); ?>"></script>
+  <script src="<?php echo $pub->getResourceUri('k2://koolkode/bpmn-komponent/public/api/lodash.min.js'); ?>"></script>
+  <script src="<?php echo $pub->getResourceUri('k2://koolkode/bpmn-komponent/public/api/sax.js'); ?>"></script>
+  <script src="<?php echo $pub->getResourceUri('k2://koolkode/bpmn-komponent/public/api/snap.svg-min.js'); ?>"></script>
+
+  <!-- bpmn-js viewer -->
+  <script src="<?php echo $pub->getResourceUri('k2://koolkode/bpmn-komponent/public/api/bpmn-viewer.min.js'); ?>"></script>
+  
+  <script>
+
+  (function(BpmnViewer, $) {
+
+		// create viewer
+		var bpmnViewer = new BpmnViewer({
+			container : '#canvas'
+		});
+
+		// import function
+		function importXML(xml) {
+
+			// import diagram
+			bpmnViewer.importXML(xml, function(err) {
+
+				if (err) {
+					return console.error('could not import BPMN 2.0 diagram', err);
+				}
+
+				var canvas = bpmnViewer.get('canvas');
+				var overlays = bpmnViewer.get('overlays');
+
+				var counter = 1;
+				var activities = <?php echo json_encode($activities, JSON_HEX_QUOT | JSON_HEX_AMP | JSON_HEX_TAG | JSON_PRETTY_PRINT); ?>;
+
+			    for(var i = 0; i < activities.length; i++) {
+			        canvas.addMarker(activities[i]['definitionKey'], 'needs-discussion');
+
+			        overlays.add(activities[i]['definitionKey'], 'note', {
+			            position: {
+			              top: -15,
+			              right: 10
+			            },
+			            html: '<div class="diagram-note">' + counter++ + '</div>'
+			        });
+			    }
+			});
+		}
+
+		// import xml
+		importXML(<?php echo json_encode($xml, JSON_HEX_QUOT | JSON_HEX_AMP | JSON_HEX_TAG); ?>);
+
+	})(window.BpmnJS, window.jQuery);
+  
+  </script>
+</body>
+</html>
