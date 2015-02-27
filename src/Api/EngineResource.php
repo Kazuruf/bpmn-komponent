@@ -9,8 +9,11 @@
  * file that was distributed with this source code.
  */
 
+// TODO: Avoid exceptions during query for task / execution after command by using historical data instead.
+
 namespace KoolKode\BPMN\Komponent\Api;
 
+use KoolKode\BPMN\History\HistoricProcessInstance;
 use KoolKode\BPMN\History\HistoryService;
 use KoolKode\BPMN\Repository\DeployedResource;
 use KoolKode\BPMN\Repository\Deployment;
@@ -461,6 +464,39 @@ class EngineResource
 				],
 				'_embedded' => [
 					'variables' => $this->runtimeService->getExecutionVariables($execution->getId())
+				]
+			];
+		});
+		
+		return $json;
+	}
+	
+	/**
+	 * @Route("GET /process/instance")
+	 */
+	public function listProcessInstances()
+	{
+		$instances = $this->historyService->createHistoricProcessInstanceQuery()->findAll();
+		
+		$json = new JsonEntity([
+			'count' => count($instances),
+			'_links' => [
+				'self' => $this->uri->generate('../list-process-instances')
+			],
+			'_embedded' => [
+				'instances' => $instances
+			]
+		]);
+		
+		$json->decorate(function(HistoricProcessInstance $process) {
+			return [
+				'_links' => [
+					'bpmn:activities' => $this->uri->generate('../list-process-activities', [
+						'id' => $process->getId()
+					])->toArray(['title' => 'Get a history of all uncanceled activities that have been started by the process instance']),
+					'bpmn:diagram' => $this->uri->generate('../render-process-activities-html', [
+						'id' => $process->getId()
+					])->toArray(['title' => 'Render process diagram with process flow visualized'])
 				]
 			];
 		});
