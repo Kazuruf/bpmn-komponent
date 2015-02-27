@@ -1,0 +1,15 @@
+
+KoolKode:
+  BPMN:
+    Engine:
+      ProcessEngine:
+        connection: default
+        transactional: true
+  Database:
+    ConnectionManager:
+      adapter:
+        default:
+          dsn: 'sqlite:%kernel.path.cache%/default.db'
+      connection:
+        default:
+          adapter: default
