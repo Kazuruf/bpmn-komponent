@@ -15,6 +15,7 @@ namespace KoolKode\BPMN\Komponent\Api;
 
 use KoolKode\BPMN\History\HistoricProcessInstance;
 use KoolKode\BPMN\History\HistoryService;
+use KoolKode\BPMN\ManagementService;
 use KoolKode\BPMN\Repository\DeployedResource;
 use KoolKode\BPMN\Repository\Deployment;
 use KoolKode\BPMN\Repository\ProcessDefinition;
@@ -69,6 +70,13 @@ class EngineResource
 	public function setHistoryService(HistoryService $historyService)
 	{
 		$this->historyService = $historyService;
+	}
+	
+	protected $managementService;
+	
+	public function setManagementService(ManagementService $managementService)
+	{
+		$this->managementService = $managementService;
 	}
 	
 	protected $resourcePublisher;
@@ -729,6 +737,26 @@ class EngineResource
 				'execution' => $this->uri->generate('../show-execution', ['id' => $task->getExecutionId()])
 			]
 		]);
+	}
+	
+	/**
+	 * @Route("GET /jobs")
+	 */
+	public function listJobs()
+	{
+		$jobs = $this->managementService->createJobQuery()->findAll();
+		
+		$json = new HalJsonEntity([
+			'count' => count($jobs),
+			'_links' => [
+				'self' => $this->uri->generate('../list-jobs')
+			],
+			'_embedded' => [
+				'jobs' => $jobs
+			]
+		]);
+		
+		return $json;
 	}
 }
 

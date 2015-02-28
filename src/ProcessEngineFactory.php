@@ -77,17 +77,13 @@ class ProcessEngineFactory
 		$engine->registerExecutionInterceptor(new ScopeExecutionInterceptor($this->scope));
 		$engine->setLogger($logger);
 		
-		// Load job executor when a scheduler is available and register all job handlers using DI marker.
-		if($this->scheduler !== NULL)
-		{
-			$executor = new JobExecutor($engine, $this->scheduler);
-			
-			$this->container->eachMarked(function(JobHandler $handler, BindingInterface $binding) use($executor) {
-				$executor->registerJobHandler($this->container->getBound($binding));
-			});
-			
-			$engine->setJobExecutor($executor);
-		}
+		$executor = new JobExecutor($engine, $this->scheduler);
+		
+		$this->container->eachMarked(function(JobHandler $handler, BindingInterface $binding) use($executor) {
+			$executor->registerJobHandler($this->container->getBound($binding));
+		});
+		
+		$engine->setJobExecutor($executor);
 		
 		$dispatcher->connect(function(AbstractProcessEvent $event) {
 			$this->scope->enterContext($event->execution);

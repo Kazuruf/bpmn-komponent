@@ -9,7 +9,7 @@ KoolKode:
     ConnectionManager:
       adapter:
         default:
-          dsn: 'sqlite:%kernel.path.cache%/default.db'
+          dsn: 'sqlite:%kernel.path.data%/default.db'
       connection:
         default:
           adapter: default
