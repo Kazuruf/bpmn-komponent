@@ -9,8 +9,6 @@
  * file that was distributed with this source code.
  */
 
-// TODO: Avoid exceptions during query for task / execution after command by using historical data instead.
-
 namespace KoolKode\BPMN\Komponent\Api;
 
 use KoolKode\BPMN\History\HistoricProcessInstance;
@@ -373,17 +371,13 @@ class EngineResource
 		$vars = array_key_exists('variables', $input) ? $input['variables'] : [];
 
 		$def = $this->repositoryService->createProcessDefinitionQuery()->processDefinitionId($id)->findOne();
-		$execution = $this->runtimeService->startProcessInstance($def, $businessKey, $vars);
+		$process = $this->runtimeService->startProcessInstance($def, $businessKey, $vars);
 
 		$response = new HttpResponse(Http::CODE_CREATED);
-		$response->setHeader('Location', $this->uri->generate('../show-execution', [
-			'id' => $execution->getId()
-		]));
 		$response->setEntity(new JsonEntity([
-			'execution' => $execution,
-			'variables' => $this->runtimeService->getExecutionVariables($execution->getId()),
-			'_links' => [
-				$this->createExecutionLinks($execution->getId())
+			'process' => $process,
+			'_embedded' => [
+				'variables' => $process->getVariables()
 			]
 		]));
 
@@ -399,18 +393,14 @@ class EngineResource
 		$businessKey = array_key_exists('businessKey', $input) ? (string)$input['businessKey'] : NULL;
 		$vars = array_key_exists('variables', $input) ? $input['variables'] : [];
 		
-		$execution = $this->runtimeService->startProcessInstanceByMessage($message, $businessKey, $vars);
+		$process = $this->runtimeService->startProcessInstanceByMessage($message, $businessKey, $vars);
 	
 		$response = new HttpResponse(Http::CODE_CREATED);
-		$response->setHeader('Location', $this->uri->generate('../show-execution', [
-				'id' => $execution->getId()
-		]));
 		$response->setEntity(new JsonEntity([
-				'execution' => $execution,
-				'variables' => $this->runtimeService->getExecutionVariables($execution->getId()),
-				'_links' => [
-					$this->createExecutionLinks($execution->getId())
-				]
+			'process' => $process,
+			'_embedded' => [
+				'variables' => $process->getVariables()
+			]
 		]));
 	
 		return $response;
@@ -574,9 +564,7 @@ class EngineResource
 		$this->runtimeService->messageEventReceived($message, $execution->getId(), $vars);
 		
 		return new JsonEntity([
-			'_links' => [
-				'bpmn:execution' => $this->uri->generate('../show-execution', ['id' => $execution->getId()])
-			]
+			'message' => $message
 		]);
 	}
 
@@ -653,9 +641,7 @@ class EngineResource
 		$this->runtimeService->signalEventReceived($signal, $execution->getId(), $vars);
 		
 		return new JsonEntity([
-			'_links' => [
-				'bpmn:execution' => $this->uri->generate('../show-execution', ['id' => $execution->getId()])
-			]
+			'signal' => $signal
 		]);
 	}
 
@@ -720,19 +706,9 @@ class EngineResource
 		$task = $this->taskService->createTaskQuery()->taskId($id)->findOne();
 
 		$this->taskService->complete($task->getId(), $vars);
-
-		try
-		{
-			$vars = $this->runtimeService->getExecutionVariables($task->getExecutionId());
-		}
-		catch(\OutOfBoundsException $e)
-		{
-			$vars = [];
-		}
 		
 		return new JsonEntity([
 			'task' => $task,
-			'variables' => $vars,
 			'_links' => [
 				'execution' => $this->uri->generate('../show-execution', ['id' => $task->getExecutionId()])
 			]

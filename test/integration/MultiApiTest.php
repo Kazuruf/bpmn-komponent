@@ -216,12 +216,11 @@ class MultiApiTest extends TestCase
 		$this->assertEquals(Http::CODE_CREATED, $response->getStatus());
 		$this->assertTrue($response->getMediaType()->is('application/json'));
 		
-		$response->getHeader('Location');
 		$payload = json_decode($response->getContents(), true);
-		$executionId = $payload['execution']['id'];
+		$executionId = $payload['process']['id'];
 		
-		$this->assertEquals($businessKey, $payload['execution']['businessKey']);
-		$this->assertEquals($vars, $payload['variables']);
+		$this->assertEquals($businessKey, $payload['process']['businessKey']);
+		$this->assertEquals($vars, $payload['_embedded']['variables']);
 		
 		$request = new HttpRequest(new Uri('http://test.me/bpmn/tasks'));
 		$response = $this->httpRule->dispatch($request);
