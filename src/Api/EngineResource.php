@@ -517,7 +517,9 @@ class EngineResource
 		$json = new HalJsonEntity([
 			'count' => count($activities),
 			'_links' => [
-				'self' => $this->uri->generate('../list-process-activities')
+				'self' => $this->uri->generate('../list-process-activities', [
+					'id' => $id
+				])
 			],
 			'_embedded' => [
 				'activities' => $activities
