@@ -16,12 +16,12 @@
 	],
 	"require" : {
 		"php" : ">=5.5.0",
-		"koolkode/bpmn" : "^0.2.0",
-		"koolkode/k2" : "dev-master",
-		"koolkode/http-komponent" : "dev-master"
+		"koolkode/bpmn" : "^0.2.2",
+		"koolkode/k2" : "~0.1",
+		"koolkode/http-komponent" : "~0.1"
 	},
 	"require-dev" : {
-		"phpunit/phpunit" : "~4.4@stable"
+		"phpunit/phpunit" : "~4.7"
 	},
 	"autoload" : {
 		"psr-4" : {
@@ -33,5 +33,12 @@
 			"KoolKode\\BPMN\\Komponent\\" : "test/src/"
 		}
 	},
-	"minimum-stability" : "dev"
+	"minimum-stability" : "stable",
+	"extra" : {
+		"preferred-install" : "dist",
+		"optimize-autoloader" : true,
+		"branch-alias" : {
+			"dev-master" : "0.1.x-dev"
+		}
+	}
 }

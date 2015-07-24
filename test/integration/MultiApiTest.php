@@ -19,7 +19,6 @@ use KoolKode\BPMN\Runtime\RuntimeService;
 use KoolKode\BPMN\Task\TaskInterface;
 use KoolKode\BPMN\Task\TaskService;
 use KoolKode\Context\Bind\ContainerBuilder;
-use KoolKode\Context\Bind\Inject;
 use KoolKode\Context\Bind\SetterInjection;
 use KoolKode\Http\Entity\FileEntity;
 use KoolKode\Http\Http;
@@ -38,22 +37,34 @@ class MultiApiTest extends TestCase
 	protected $httpRule;
 	
 	/**
-	 * @Inject
 	 * @var RepositoryService
 	 */
 	protected $repositoryService;
 	
+	public function injectRepositoryService(RepositoryService $repositoryService)
+	{
+		$this->repositoryService = $repositoryService;
+	}
+	
 	/**
-	 * @Inject
 	 * @var RuntimeService
 	 */
 	protected $runtimeService;
 	
+	public function injectRuntimeService(RuntimeService $runtimeService)
+	{
+		$this->runtimeService = $runtimeService;
+	}
+	
 	/**
-	 * @Inject
 	 * @var TaskService
 	 */
 	protected $taskService;
+	
+	public function injectTaskService(TaskService $taskService)
+	{
+		$this->taskService = $taskService;
+	}
 	
 	protected function setUpRules()
 	{
